@@ -1,0 +1,25 @@
+# Meredith Bay Corp. Property Analysis
+
+## 41 Waukewan St
+Monthly Rent = 2350.00
+Taxes = 3560.22
+Insurance = 2000.00
+Total Expenses = Taxes + Insurance
+Yearly Profit = (Monthly Rent * 12) - Total Expenses
+
+## 15 Oak Street
+Monthly Rent = 1850.00
+Taxes = 2890.50
+Insurance = 1500.00
+Total Expenses Oak = Taxes + Insurance
+Yearly Profit Oak = (Monthly Rent * 12) - Total Expenses Oak
+
+## Portfolio Summary
+Total Monthly Income = 2350.00 + 1850.00
+Total Yearly Income = Total Monthly Income * 12
+Total Yearly Expenses = Total Expenses + Total Expenses Oak
+Net Portfolio Profit = Total Yearly Income - Total Yearly Expenses
+
+## ROI Calculation
+Initial Investment = 50000.00
+Annual ROI = (Net Portfolio Profit / Initial Investment) * 100
