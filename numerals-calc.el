@@ -18,6 +18,10 @@
 (require 'calc)
 (require 'calc-ext)
 
+;; Ensure calc is properly initialized
+(unless (featurep 'calc-aent)
+  (require 'calc-aent))
+
 (defun numerals-calc-substitute-variables (expression variables)
   "Substitute VARIABLES in EXPRESSION with their values.
 VARIABLES is an alist of (name . value) pairs.
@@ -39,19 +43,35 @@ Returns the expression with variables replaced by their values."
 (defun numerals-calc-evaluate (expression &optional variables)
   "Evaluate mathematical EXPRESSION using calc.
 Optional VARIABLES is an alist of (name . value) pairs.
-Returns the calculated result as a string, or nil on error."
+Returns a plist with :value (the result) and :error (error message if any)."
   (condition-case err
       (let* ((substituted (if variables
                               (numerals-calc-substitute-variables expression variables)
                             expression))
-             (calc-eval-result (calc-eval substituted)))
-        ;; Check if calc-eval returned an error
-        (if (string-match-p "^\\(Error\\|\\*\\)" calc-eval-result)
-            nil
-          calc-eval-result))
+             ;; Ensure calc is in a clean state
+             (calc-language nil)
+             (calc-algebraic-mode t)
+             (calc-eval-result (with-timeout (1.0 "*Timeout*")
+                                 (calc-eval substituted))))
+        ;; Check if calc-eval timed out
+        (cond
+         ((equal calc-eval-result "*Timeout*")
+          (list :value nil :error "Calculation timeout"))
+         ;; Check if calc-eval returned an error
+         ((string-match "^\\*Error: \\(.+\\)" calc-eval-result)
+          (list :value nil :error (match-string 1 calc-eval-result)))
+         ((string-match-p "^\\(Error\\|\\*\\)" calc-eval-result)
+          (list :value nil :error calc-eval-result))
+         ;; Check for division by zero and other calc errors
+         ((string-match-p "\\(/[ ]*0\\|inf\\|nan\\)" calc-eval-result)
+          (list :value nil :error "Division by zero"))
+         ;; Check if result contains undefined variables
+         ((string-match-p "[A-Za-z]" calc-eval-result)
+          (list :value nil :error "Undefined variable"))
+         (t
+          (list :value calc-eval-result :error nil))))
     (error
-     (message "Calculation error: %s" (error-message-string err))
-     nil)))
+     (list :value nil :error (error-message-string err)))))
 
 (defun numerals-calc-format-result (result)
   "Format the calculation RESULT for display.

@@ -101,6 +101,28 @@ Removes old dependencies and adds new ones."
   (setq numerals-variables-dependencies
         (assoc-delete-all name numerals-variables-dependencies)))
 
+(defun numerals-variables-get-all-dependents (var)
+  "Get all variables that transitively depend on VAR.
+Returns a list of variables in dependency order (deepest first)."
+  (let ((visited '())
+        (result '()))
+    (numerals-variables--collect-dependents var visited result)
+    result))
+
+(defun numerals-variables--collect-dependents (var visited result)
+  "Helper function to collect transitive dependents of VAR.
+VISITED tracks already processed variables to avoid cycles.
+RESULT accumulates the dependency-ordered list."
+  (unless (member var visited)
+    (push var visited)
+    (let ((direct-deps (numerals-variables-get-dependents var)))
+      (dolist (dep direct-deps)
+        (numerals-variables--collect-dependents dep visited result))
+      (dolist (dep direct-deps)
+        (unless (member dep result)
+          (push dep result))))
+    result))
+
 (defun numerals-variables-clear ()
   "Clear all variables and dependencies."
   (clrhash numerals-variables-table)

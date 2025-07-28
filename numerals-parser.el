@@ -71,9 +71,10 @@ Returns a list of variable names found in the expression."
         (when (and (or (= start 0)
                        (not (string-match-p "[0-9.]" (substring expression (1- start) start))))
                    (or (= end (length expression))
-                       (not (string-match-p "[0-9]" (substring expression end (1+ end))))))
+                       (not (string-match-p "[0-9]" (substring expression end (min (1+ end) (length expression)))))))
           (push var variables))
-        (setq pos end)))
+        ;; Always advance pos to avoid infinite loop
+        (setq pos (max (1+ pos) end))))
     (delete-dups (nreverse variables))))
 
 (defun numerals-parser-validate-expression (expression)
