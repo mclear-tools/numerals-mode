@@ -30,11 +30,21 @@
 (require 'numerals-calc)
 (require 'numerals-variables)
 (require 'numerals-display)
+(require 'numerals-tables)
 
 (defgroup numerals nil
   "Literate calculation mode."
   :group 'convenience
   :prefix "numerals-")
+
+(defvar numerals-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") 'numerals-recalculate)
+    (define-key map (kbd "C-c C-k") 'numerals-clear)
+    (define-key map (kbd "C-c C-t") 'numerals-toggle-overlays)
+    (define-key map (kbd "C-c C-l") 'numerals-toggle-overlay-at-point)
+    map)
+  "Keymap for numerals-mode.")
 
 
 
@@ -42,8 +52,12 @@
 (define-minor-mode numerals-mode
   "Toggle Numerals mode for literate calculations.
 When Numerals mode is enabled, lines containing calculations
-are automatically evaluated and results are displayed as overlays."
+are automatically evaluated and results are displayed as overlays.
+
+Key bindings:
+\\{numerals-mode-map}"
   :lighter " Num"
+  :keymap numerals-mode-map
   :group 'numerals
   (if numerals-mode
       (numerals-mode-enable)
@@ -53,6 +67,9 @@ are automatically evaluated and results are displayed as overlays."
   "Enable numerals-mode in the current buffer."
   ;; Initialize variables
   (numerals-variables-init)
+  ;; Disable org-mode table calculations if in org-mode
+  (when (derived-mode-p 'org-mode)
+    (numerals-disable-org-table-calculations))
   ;; Process the buffer
   (numerals-update-buffer)
   ;; Set up hook to update on save
@@ -64,8 +81,80 @@ are automatically evaluated and results are displayed as overlays."
   (numerals-display-clear-all)
   ;; Clear variables
   (numerals-variables-clear)
+  ;; Re-enable org-mode table calculations if in org-mode
+  (when (derived-mode-p 'org-mode)
+    (numerals-enable-org-table-calculations))
   ;; Remove hook
   (remove-hook 'after-save-hook #'numerals-update-buffer t))
+
+;;; Org-mode Integration
+
+(defvar-local numerals-org-table-auto-blank-field nil
+  "Saved value of org-table-auto-blank-field.")
+
+(defvar-local numerals-org-table-formula-evaluate-inline nil
+  "Saved value of org-table-formula-evaluate-inline.")
+
+(defun numerals-disable-org-table-calculations ()
+  "Disable org-mode's built-in table calculations."
+  (when (featurep 'org-table)
+    ;; Save current values
+    (setq numerals-org-table-auto-blank-field org-table-auto-blank-field)
+    (setq numerals-org-table-formula-evaluate-inline org-table-formula-evaluate-inline)
+    ;; Disable org table features that interfere
+    (setq-local org-table-auto-blank-field nil)
+    (setq-local org-table-formula-evaluate-inline nil)
+    ;; Remove org table calculation hooks
+    (remove-hook 'org-ctrl-c-ctrl-c-hook 'org-table-maybe-eval-formula t)
+    (remove-hook 'org-ctrl-c-ctrl-c-hook 'org-table-maybe-recalculate-line t)
+    ;; Disable automatic table recalculation
+    (when (fboundp 'org-table-recalculate)
+      (advice-add 'org-table-recalculate :around #'numerals-suppress-org-table-recalc))
+    (when (fboundp 'org-table-calc-current-TBLFM)
+      (advice-add 'org-table-calc-current-TBLFM :around #'numerals-suppress-org-table-recalc))))
+
+(defun numerals-enable-org-table-calculations ()
+  "Re-enable org-mode's built-in table calculations."
+  (when (featurep 'org-table)
+    ;; Restore saved values
+    (setq-local org-table-auto-blank-field numerals-org-table-auto-blank-field)
+    (setq-local org-table-formula-evaluate-inline numerals-org-table-formula-evaluate-inline)
+    ;; Re-add org table calculation hooks
+    (add-hook 'org-ctrl-c-ctrl-c-hook 'org-table-maybe-eval-formula nil t)
+    (add-hook 'org-ctrl-c-ctrl-c-hook 'org-table-maybe-recalculate-line nil t)
+    ;; Remove advice
+    (when (fboundp 'org-table-recalculate)
+      (advice-remove 'org-table-recalculate #'numerals-suppress-org-table-recalc))
+    (when (fboundp 'org-table-calc-current-TBLFM)
+      (advice-remove 'org-table-calc-current-TBLFM #'numerals-suppress-org-table-recalc))))
+
+(defun numerals-suppress-org-table-recalc (orig-fun &rest args)
+  "Suppress org-table recalculation when numerals-mode is active."
+  (unless numerals-mode
+    (apply orig-fun args)))
+
+(defun numerals-display-table-result (start end result)
+  "Display RESULT as an overlay replacing text from START to END.
+Pads to exact original length for perfect table alignment."
+  (let* ((original-text (buffer-substring start end))
+         (original-length (length original-text))
+         (result-length (length result))
+         ;; Always pad to exact original length for perfect alignment
+         (padded-result (if (< result-length original-length)
+                           (let ((padding-needed (- original-length result-length)))
+                             ;; Right-align numbers, left-align everything else
+                             (if (string-match-p "^[0-9.-]+$" result)
+                                 (concat (make-string padding-needed ?\s) result)
+                               (concat result (make-string padding-needed ?\s))))
+                         ;; If result is longer, truncate to fit
+                         (substring result 0 original-length)))
+         (overlay (make-overlay start end))
+         (text (propertize padded-result 'face 'numerals-calculated-face)))
+    ;; Configure the overlay to replace the text
+    (overlay-put overlay 'display text)
+    (overlay-put overlay 'numerals-overlay t)
+    ;; Add to our list for cleanup
+    (push overlay numerals-display-overlays)))
 
 
 
@@ -82,7 +171,9 @@ are automatically evaluated and results are displayed as overlays."
       ;; Process each line
       (goto-char (point-min))
       (while (not (eobp))
-        (numerals-process-line)
+        (if (numerals-table-at-point-p)
+            (numerals-process-table)
+          (numerals-process-line))
         (forward-line 1)))))
 
 (defun numerals-process-line ()
@@ -134,6 +225,45 @@ Returns the parse result for the line."
                                    t)))))
     parse-result))
 
+(defun numerals-process-table ()
+  "Process formulas in the table at point.
+Advances point past the table."
+  (when-let ((table (numerals-table-parse)))
+    (let ((bounds (plist-get table :bounds))
+          (data (plist-get table :data))
+          (headers (plist-get table :headers))
+          (current-row 0))
+      ;; Process headers if they exist
+      (when headers
+        (setq current-row 1)
+        (numerals-process-table-row headers table current-row))
+      ;; Process data rows
+      (let ((data-row-index 0))
+        (dolist (row data)
+          (setq current-row (if headers (+ 2 data-row-index) (+ 1 data-row-index)))
+          (numerals-process-table-row row table current-row)
+          (setq data-row-index (1+ data-row-index))))
+      ;; Move past the table
+      (goto-char (cdr bounds)))))
+
+(defun numerals-process-table-row (row table row-num)
+  "Process formulas in a table ROW.
+TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
+  (let ((col-num 0))
+    (dolist (cell row)
+      (setq col-num (1+ col-num))
+      (when (string-match "^\\s-*=\\s-*\\(.+\\)" cell)
+        (let* ((formula (match-string 1 cell))
+               (result (numerals-table-process-formula formula table row-num col-num))
+               (formula-text (concat "=" formula)))
+          ;; Search for the formula text directly in the table
+          (save-excursion
+            (goto-char (car (plist-get table :bounds)))
+            (when (search-forward formula-text (cdr (plist-get table :bounds)) t)
+              (let ((formula-start (- (point) (length formula-text)))
+                    (formula-end (point)))
+                (numerals-display-table-result formula-start formula-end result)))))))))
+
 (defun numerals-recalculate ()
   "Manually trigger recalculation of all expressions."
   (interactive)
@@ -145,6 +275,38 @@ Returns the parse result for the line."
   (numerals-variables-clear)
   (numerals-display-clear-all)
   (message "Numerals: Cleared all variables and calculations"))
+
+(defun numerals-toggle-overlays ()
+  "Toggle visibility of all numerals overlays in the current buffer."
+  (interactive)
+  (if numerals-display-overlays
+      (progn
+        (numerals-display-clear-all)
+        (message "Numerals: Overlays hidden"))
+    (progn
+      (numerals-update-buffer)
+      (message "Numerals: Overlays shown"))))
+
+(defun numerals-toggle-overlay-at-point ()
+  "Toggle the numerals overlay on the current line."
+  (interactive)
+  (let ((had-overlay nil))
+    ;; Check if there's an overlay on this line
+    (dolist (overlay numerals-display-overlays)
+      (when (and (overlay-buffer overlay)
+                 (>= (overlay-start overlay) (line-beginning-position))
+                 (<= (overlay-start overlay) (line-end-position)))
+        (setq had-overlay t)))
+    
+    (if had-overlay
+        (progn
+          (numerals-display-clear-line (point))
+          (message "Numerals: Overlay hidden at point"))
+      (progn
+        ;; Re-process just this line
+        (let ((parse-result (numerals-process-line)))
+          (when parse-result
+            (message "Numerals: Overlay shown at point")))))))
 
 (provide 'numerals-mode)
 ;;; numerals-mode.el ends here
