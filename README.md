@@ -5,7 +5,7 @@ A minor mode that provides literate calculation functionality similar to Obsidia
 ## Features
 
 - **Variable Assignment**: Define variables with natural syntax like `Monthly Rent = 2350.00`
-- **Live Calculations**: Expressions are evaluated automatically as you type
+- **Save-Based Updates**: Calculations update when you save the file (no lag while typing)
 - **Variable References**: Use previously defined variables in calculations
 - **Overlay Display**: Results appear as overlays, not modifying your file
 - **Natural Syntax**: Support for variable names with spaces
@@ -28,7 +28,7 @@ Enable numerals-mode in any buffer:
 M-x numerals-mode
 ```
 
-Then start writing calculations:
+Then start writing calculations. Results will update when you save the file:
 
 ```
 Monthly Rent = 2350.00              => Monthly Rent: 2350
@@ -43,6 +43,8 @@ Yearly Profit = (Monthly Rent * 12) - Total Expenses => Yearly Profit: 22639.78
 - `numerals-mode`: Toggle numerals mode
 - `numerals-recalculate`: Manually recalculate all expressions
 - `numerals-clear`: Clear all variables and calculations
+
+Calculations automatically update when you save the file (`C-x C-s`).
 
 ## Examples
 

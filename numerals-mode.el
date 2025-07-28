@@ -23,7 +23,8 @@
 ;;; Code:
 
 ;; Add the directory containing this file to load-path
-(add-to-list 'load-path (file-name-directory load-file-name))
+(when load-file-name
+  (add-to-list 'load-path (file-name-directory load-file-name)))
 
 (require 'numerals-parser)
 (require 'numerals-calc)
@@ -35,13 +36,7 @@
   :group 'convenience
   :prefix "numerals-")
 
-(defcustom numerals-update-delay 0.5
-  "Delay in seconds before updating calculations after changes."
-  :type 'number
-  :group 'numerals)
 
-(defvar-local numerals-mode-update-timer nil
-  "Timer for delayed updates in numerals-mode.")
 
 ;;;###autoload
 (define-minor-mode numerals-mode
@@ -60,8 +55,8 @@ are automatically evaluated and results are displayed as overlays."
   (numerals-variables-init)
   ;; Process the buffer
   (numerals-update-buffer)
-  ;; Set up hooks
-  (add-hook 'after-change-functions #'numerals-mode-after-change nil t))
+  ;; Set up hook to update on save
+  (add-hook 'after-save-hook #'numerals-update-buffer nil t))
 
 (defun numerals-mode-disable ()
   "Disable numerals-mode in the current buffer."
@@ -69,22 +64,12 @@ are automatically evaluated and results are displayed as overlays."
   (numerals-display-clear-all)
   ;; Clear variables
   (numerals-variables-clear)
-  ;; Cancel timer
-  (when numerals-mode-update-timer
-    (cancel-timer numerals-mode-update-timer)
-    (setq numerals-mode-update-timer nil))
-  ;; Remove hooks
-  (remove-hook 'after-change-functions #'numerals-mode-after-change t))
+  ;; Remove hook
+  (remove-hook 'after-save-hook #'numerals-update-buffer t))
 
-(defun numerals-mode-after-change (_beg _end _len)
-  "Handle buffer changes for numerals-mode."
-  ;; Cancel existing timer
-  (when numerals-mode-update-timer
-    (cancel-timer numerals-mode-update-timer))
-  ;; Schedule update
-  (setq numerals-mode-update-timer
-        (run-with-timer numerals-update-delay nil
-                        #'numerals-update-buffer)))
+
+
+
 
 (defun numerals-update-buffer ()
   "Update all calculations in the current buffer."
@@ -101,7 +86,8 @@ are automatically evaluated and results are displayed as overlays."
         (forward-line 1)))))
 
 (defun numerals-process-line ()
-  "Process the current line for calculations."
+  "Process the current line for calculations.
+Returns the parse result for the line."
   (let* ((line (buffer-substring-no-properties
                 (line-beginning-position)
                 (line-end-position)))
@@ -113,29 +99,40 @@ are automatically evaluated and results are displayed as overlays."
       (let* ((var-name (plist-get parse-result :variable))
              (expression (plist-get parse-result :expression))
              (dependencies (numerals-parser-extract-variables expression))
-             (result (numerals-calc-evaluate expression
-                                             (numerals-variables-get-all)))
+             (calc-result (numerals-calc-evaluate expression
+                                                 (numerals-variables-get-all)))
+             (result (plist-get calc-result :value))
+             (error-msg (plist-get calc-result :error))
              ;; Check if this is a simple literal or a calculation
              (is-literal (and result
                               (string-match-p "^[0-9.-]+$" (string-trim expression))
                               (null dependencies))))
-        (when result
-          (numerals-variables-set var-name result expression dependencies)
+        (if result
+            (progn
+              (numerals-variables-set var-name result expression dependencies)
+              (numerals-display-result (point) 
+                                       (numerals-calc-format-result result)
+                                       nil
+                                       (if is-literal nil 'numerals-calculated-face)))
           (numerals-display-result (point) 
-                                   (numerals-calc-format-result result)
-                                   nil
-                                   (if is-literal nil 'numerals-calculated-face)))))
+                                   (or error-msg "Error")
+                                   t))))
      ;; Handle standalone calculation
      ((eq type 'calculation)
       (let* ((expression (plist-get parse-result :expression))
-             (result (numerals-calc-evaluate expression
-                                             (numerals-variables-get-all))))
+             (calc-result (numerals-calc-evaluate expression
+                                                 (numerals-variables-get-all)))
+             (result (plist-get calc-result :value))
+             (error-msg (plist-get calc-result :error)))
         (if result
             (numerals-display-result (point)
                                      (numerals-calc-format-result result)
                                      nil
                                      'numerals-calculated-face)
-          (numerals-display-result (point) "Error" t)))))))
+          (numerals-display-result (point) 
+                                   (or error-msg "Error")
+                                   t)))))
+    parse-result))
 
 (defun numerals-recalculate ()
   "Manually trigger recalculation of all expressions."
