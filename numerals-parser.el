@@ -16,10 +16,10 @@
 ;;; Code:
 
 (defconst numerals-parser-variable-name-regexp
-  "\\([A-Za-z][A-Za-z0-9 ]*[A-Za-z0-9]\\|[A-Za-z]\\)"
+  "\\([A-Za-z][A-Za-z0-9_ ]*[A-Za-z0-9_]\\|[A-Za-z]\\)"
   "Regexp matching valid variable names.
-Variable names can contain letters, numbers and spaces, but must
-start and end with a letter or number.")
+Variable names can contain letters, numbers, underscores and spaces, but must
+start with a letter and end with a letter, number, or underscore.")
 
 (defconst numerals-parser-assignment-regexp
   (concat "^\\s-*\\(" numerals-parser-variable-name-regexp "\\)\\s-*=\\s-*\\(.+\\)$")

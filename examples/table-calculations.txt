@@ -1,0 +1,67 @@
+# Table Calculation Examples for Numerals Mode
+
+This file demonstrates table calculations in both org-mode and markdown formats.
+
+## Markdown Table Example - Sales Report
+
+| Product | Q1 Sales | Q2 Sales | Q3 Sales | Q4 Sales | Total     |
+|---------|----------|----------|----------|----------|-----------|
+| Laptop  | 15000    | 18000    | 20000    | 25000    | =SUM(B2:E2) |
+| Phone   | 8000     | 9500     | 11000    | 14000    | =SUM(B3:E3) |
+| Tablet  | 5000     | 6000     | 7000     | 8500     | =SUM(B4:E4) |
+| Total   | =SUM(B2:B4) | =SUM(C2:C4) | =SUM(D2:D4) | =SUM(E2:E4) | =SUM(F2:F4) |
+
+Quarterly Average = =AVERAGE(B5:E5)
+Best Product Total = =MAX(F2:F4)
+Total Annual Sales = =F5
+
+## Org-mode Table Example - Budget Tracking
+
+| Category     | Budget | Jan    | Feb    | Mar    | Q1 Total    | Variance      |
+|--------------+--------+--------+--------+--------+-------------+---------------|
+| Food         | 1500   | 450    | 480    | 470    | =SUM(C2:E2) | =B2-F2        |
+| Transport    | 800    | 250    | 260    | 240    | =SUM(C3:E3) | =B3-F3        |
+| Utilities    | 600    | 180    | 190    | 185    | =SUM(C4:E4) | =B4-F4        |
+| Entertainment| 400    | 150    | 120    | 130    | =SUM(C5:E5) | =B5-F5        |
+|--------------+--------+--------+--------+--------+-------------+---------------|
+| Total        | =SUM(B2:B5) | =SUM(C2:C5) | =SUM(D2:D5) | =SUM(E2:E5) | =SUM(F2:F5) | =SUM(G2:G5) |
+
+Monthly Average Spending = =AVERAGE(C6:E6)
+Budget Utilization = =(F6/B6)*100
+
+## Mixed Variables and Tables
+
+Tax Rate = 0.15
+Discount = 0.10
+
+| Item        | Price  | Quantity | Subtotal    | Tax         | Discount    | Total       |
+|-------------|--------|----------|-------------|-------------|-------------|-------------|
+| Widget A    | 25.00  | 10       | =B2*C2      | =D2*Tax Rate| =D2*Discount| =D2+E2-F2   |
+| Widget B    | 35.00  | 5        | =B3*C3      | =D3*Tax Rate| =D3*Discount| =D3+E3-F3   |
+| Widget C    | 45.00  | 8        | =B4*C4      | =D4*Tax Rate| =D4*Discount| =D4+E4-F4   |
+| **Total**   |        |          | =SUM(D2:D4) | =SUM(E2:E4) | =SUM(F2:F4) | =SUM(G2:G4) |
+
+Grand Total = =G5
+Total Tax Collected = =E5
+Total Discount Given = =F5
+
+## Cell Reference Examples
+
+### Excel-style References
+- `B2` - Single cell
+- `B2:D4` - Range of cells
+- `SUM(A1:A10)` - Sum function with range
+- `AVERAGE(B:B)` - Column reference (future feature)
+
+### Supported Functions
+- `SUM(range)` - Sum of values in range
+- `AVERAGE(range)` - Average of values in range  
+- `COUNT(range)` - Count of non-empty cells
+- `MAX(range)` - Maximum value in range
+- `MIN(range)` - Minimum value in range
+
+### Usage Tips
+1. Formulas must start with `=`
+2. Cell references are case-insensitive (b2 = B2)
+3. Updates happen when you save the file
+4. Results appear as overlays (don't modify the file)

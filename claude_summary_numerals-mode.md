@@ -163,13 +163,121 @@ Yearly Profit = (Monthly Rent * 12) - Yearly Expenses
 4. **Mathematical Plotting**: Integration with calc's plotting capabilities
 5. **Package Distribution**: Submit to MELPA when stable
 
+## Current Implementation Status (Updated Session)
+
+### ✅ Completed Features
+
+**Core Functionality:**
+- Variable assignment and calculation system working
+- Save-based updates (no real-time updating to avoid freezing)
+- Overlay display system for results
+- Integration with Emacs calc for mathematical operations
+
+**Table Support (New):**
+- Full support for both org-mode and markdown tables
+- Excel-style cell references (A1, B2, C3, etc.)
+- Range functions: SUM(A1:A3), AVERAGE(B2:B5), COUNT, MAX, MIN
+- Formula syntax: `=B2*0.03`, `=SUM(C2:C5)` in table cells
+- Clean result display replacing formulas with calculated values
+- Org-mode integration that disables org's built-in table calculations
+
+**File Structure:**
+- `numerals-mode.el` - Main mode with table processing
+- `numerals-parser.el` - Handles both text and table parsing
+- `numerals-calc.el` - Calculator with timeout protection and error handling
+- `numerals-variables.el` - Simplified variable storage (no dependency tracking)
+- `numerals-display.el` - Overlay management
+- `numerals-tables.el` - Complete table support module
+- `numerals-dev.el` - Development helpers for reloading
+
+### 🔧 Recent Major Changes
+
+**Performance Fix:**
+- Removed all real-time buffer updating (after-change-functions)
+- Switched to save-based updates only (after-save-hook)
+- Eliminated freezing issues caused by complex change tracking
+- Removed dependency tracking system (simplified approach)
+
+**Table Calculations:**
+- Added comprehensive table detection for org-mode and markdown
+- Implemented cell reference parsing (Excel-style: B2, C3, ranges: B2:B5)
+- Created table-specific formula processing and overlay display
+- Solved overlay alignment issues with exact-length padding
+- Integrated with org-mode by disabling conflicting table features
+
+**Display System:**
+- Two overlay modes: regular calculations show "=> result", table cells replace formula text
+- Table overlays use perfect alignment with padding to original formula length
+- Right-aligned numbers in table cells for professional appearance
+
+### ⚙️ Technical Implementation Details
+
+**Table Processing Flow:**
+1. Detect table type (org vs markdown) using line patterns
+2. Parse table structure, skipping separator lines
+3. Process each cell looking for `=formula` patterns
+4. Search for exact formula text in buffer and replace with overlay
+5. Maintain perfect table alignment through character-exact padding
+
+**Org-mode Integration:**
+- Disables org's built-in table calculations when numerals-mode is active
+- Removes org table hooks and advises key functions
+- Preserves org functionality when numerals-mode is disabled
+
+**Development Tools:**
+- `numerals-reload` function for quick development iteration
+- `numerals-test-buffer` creates test environment
+- Debug functions for table parsing analysis
+
+### 🎯 Current Behavior
+
+**Regular Text:**
+```
+x = 10              => 10
+y = 20              => 20  
+total = x + y       => 30
+```
+
+**Table Calculations:**
+```
+| Item    | Price | Qty | Total    |
+|---------|-------|-----|----------|
+| Apples  | 2.50  | 10  |     25.0 |  ← Was =B2*C2
+| Oranges | 3.00  | 5   |     15.0 |  ← Was =B3*C3
+| Total   |       |     |     40.0 |  ← Was =SUM(D2:D3)
+```
+
+### 📋 Known Limitations
+
+**Table Display:**
+- Columns with formulas appear wider than necessary due to padding requirements
+- Perfect alignment vs. compact columns is a fundamental tradeoff with overlay replacement
+- Longer results may get truncated if they exceed original formula length
+
+**Functionality:**
+- No real-time updates (save-based only)
+- No cross-buffer variable references
+- No dependency tracking between variables
+- Limited to basic arithmetic and provided functions
+
+### 🚀 Ready for Use
+
+The mode is now fully functional for:
+- Property analysis calculations
+- Financial modeling with tables
+- Scientific calculations with variables
+- Any scenario requiring literate calculations with table support
+
+Example files provided:
+- `examples/property-analysis.txt` - Variable-based calculations
+- `examples/table-calculations.txt` - Table calculation examples
+
 ## Getting Started for Development
 
-1. Clone the repository
-2. Load `numerals-mode.el` in Emacs
-3. Enable `numerals-minor-mode` in a test buffer
-4. Test basic variable assignment and calculation
-5. Run the test suite with `make test`
+1. Load `numerals-dev.el` for development helpers
+2. Use `M-x numerals-reload` to reload changes
+3. Use `M-x numerals-test-buffer` for quick testing
+4. Test with both regular text and table formats
 
 ## Comparison to Existing Solutions
 
