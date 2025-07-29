@@ -22,6 +22,9 @@
 (unless (featurep 'calc-aent)
   (require 'calc-aent))
 
+;; Forward declaration to avoid circular dependency
+(declare-function numerals-table-refs-substitute "numerals-table-refs-simple")
+
 (defun numerals-calc-substitute-variables (expression variables)
   "Substitute VARIABLES in EXPRESSION with their values.
 VARIABLES is an alist of (name . value) pairs.
@@ -34,25 +37,42 @@ Returns the expression with variables replaced by their values."
       (let ((name (car var))
             (value (cdr var)))
         ;; Use word boundaries to ensure we don't replace partial matches
-        (setq result (replace-regexp-in-string
-                      (concat "\\<" (regexp-quote name) "\\>")
-                      (format "%s" value)
-                      result))))
+        ;; Skip variables with nil values to avoid substituting "nil" as text
+        (if value
+            (progn
+              (setq result (replace-regexp-in-string
+                            (concat "\\<" (regexp-quote name) "\\>")
+                            (format "%s" value)
+                            result)))
+)))
     result))
+
 
 (defun numerals-calc-evaluate (expression &optional variables)
   "Evaluate mathematical EXPRESSION using calc.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
   (condition-case err
-      (let* ((substituted (if variables
-                              (numerals-calc-substitute-variables expression variables)
-                            expression))
+      (let* (;; First substitute table references
+             (table-substituted (condition-case table-err
+                                    (if (fboundp 'numerals-table-refs-substitute)
+                                        (numerals-table-refs-substitute expression variables)
+                                      expression)
+                                  (error
+                                   (message "Debug: Table substitution error: %s" (error-message-string table-err))
+                                   expression)))
+             ;; Then substitute variables
+             (substituted (if variables
+                              (numerals-calc-substitute-variables table-substituted variables)
+                            table-substituted))
              ;; Ensure calc is in a clean state
              (calc-language nil)
              (calc-algebraic-mode t)
              (calc-eval-result (with-timeout (1.0 "*Timeout*")
                                  (calc-eval substituted))))
+        ;; Ensure calc-eval-result is a string
+        (unless (stringp calc-eval-result)
+          (setq calc-eval-result (format "%s" calc-eval-result)))
         ;; Check if calc-eval timed out
         (cond
          ((equal calc-eval-result "*Timeout*")
@@ -65,12 +85,14 @@ Returns a plist with :value (the result) and :error (error message if any)."
          ;; Check for division by zero and other calc errors
          ((string-match-p "\\(/[ ]*0\\|inf\\|nan\\)" calc-eval-result)
           (list :value nil :error "Division by zero"))
-         ;; Check if result contains undefined variables
+         ;; Check if result contains undefined variables  
          ((string-match-p "[A-Za-z]" calc-eval-result)
           (list :value nil :error "Undefined variable"))
          (t
           (list :value calc-eval-result :error nil))))
     (error
+     (message "Debug: calc-evaluate main error: %s" (error-message-string err))
+     (message "Debug: calc-evaluate error data: %s" err)
      (list :value nil :error (error-message-string err)))))
 
 (defun numerals-calc-format-result (result)

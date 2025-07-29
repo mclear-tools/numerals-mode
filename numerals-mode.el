@@ -28,6 +28,7 @@
 
 (require 'numerals-parser)
 (require 'numerals-calc)
+(require 'numerals-table-refs-simple)
 (require 'numerals-variables)
 (require 'numerals-display)
 (require 'numerals-tables)
@@ -156,6 +157,7 @@ Pads to exact original length for perfect table alignment."
     ;; Add to our list for cleanup
     (push overlay numerals-display-overlays)))
 
+
 (defun numerals-display-table-result-with-column (start end result table col-num)
   "Display RESULT as an overlay with column-aware alignment.
 Uses the maximum formula width for the column to ensure consistent alignment."
@@ -234,9 +236,12 @@ Returns the parse result for the line."
                                        (numerals-calc-format-result result)
                                        nil
                                        (if is-literal nil 'numerals-calculated-face)))
-          (numerals-display-result (point) 
-                                   (or error-msg "Error")
-                                   t))))
+          (progn
+            ;; Even if calculation failed, set the variable to nil so it's defined
+            (numerals-variables-set var-name nil expression dependencies)
+            (numerals-display-result (point) 
+                                     (or error-msg "Error")
+                                     t)))))
      ;; Handle standalone calculation
      ((eq type 'calculation)
       (let* ((expression (plist-get parse-result :expression))
@@ -359,6 +364,31 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
         (let ((parse-result (numerals-process-line)))
           (when parse-result
             (message "Numerals: Overlay shown at point")))))))
+
+(defun numerals-reload ()
+  "Reload numerals-mode for development."
+  (interactive)
+  (let ((enabled-buffers '()))
+    ;; Find all buffers with numerals-mode enabled and disable it
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (when numerals-mode
+          (push buffer enabled-buffers)
+          (numerals-mode -1))))
+    ;; Reload all modules
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-parser.el")
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-calc.el")
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-table-refs-simple.el")
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-variables.el")
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-display.el")
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-tables.el")
+    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-mode.el")
+    ;; Re-enable in all previously enabled buffers
+    (dolist (buffer enabled-buffers)
+      (when (buffer-live-p buffer)
+        (with-current-buffer buffer
+          (numerals-mode 1))))
+    (message "Numerals-mode reloaded in %d buffer(s)" (length enabled-buffers))))
 
 (provide 'numerals-mode)
 ;;; numerals-mode.el ends here

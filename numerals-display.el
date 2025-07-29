@@ -37,20 +37,23 @@
   "Display RESULT at position POS using an overlay.
 If ERROR-P is non-nil, display as an error.
 FACE-OVERRIDE can specify a specific face to use."
-  (let* ((line-end (save-excursion
-                     (goto-char pos)
-                     (line-end-position)))
-         (overlay (make-overlay line-end line-end))
-         (face (cond (error-p 'numerals-error-face)
-                     (face-override face-override)
-                     (t 'numerals-result-face)))
-         (text (concat " => " result)))
-    ;; Configure the overlay
-    (overlay-put overlay 'after-string
-                 (propertize text 'face face))
-    (overlay-put overlay 'numerals-overlay t)
-    ;; Add to our list for cleanup
-    (push overlay numerals-display-overlays)))
+  (condition-case err
+      (let* ((line-end (save-excursion
+                         (goto-char pos)
+                         (line-end-position)))
+             (overlay (make-overlay line-end line-end))
+             (face (cond (error-p 'numerals-error-face)
+                         (face-override face-override)
+                         (t 'numerals-result-face)))
+             (text (concat " => " result)))
+        ;; Configure the overlay
+        (overlay-put overlay 'after-string
+                     (propertize text 'face face))
+        (overlay-put overlay 'numerals-overlay t)
+        ;; Add to our list for cleanup
+        (push overlay numerals-display-overlays))
+    (error
+     (message "Display result error at pos %d: %s" pos (error-message-string err)))))
 
 (defun numerals-display-clear-line (pos)
   "Clear any numerals overlays on the line containing POS."
