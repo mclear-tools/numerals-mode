@@ -219,7 +219,13 @@ Handles formulas like =B2*0.03 but avoids nested SUM calls to prevent recursion.
                                              (condition-case nil
                                                  ;; Only evaluate simple formulas that don't contain functions
                                                  (if (string-match-p "\\(SUM\\|AVERAGE\\|COUNT\\|MAX\\|MIN\\)" formula)
-                                                     "0" ; Skip nested function calls to avoid recursion
+                                                     ;; Skip nested function calls to avoid recursion, but try basic evaluation
+                                                     (condition-case nil
+                                                       (let ((simple-result (numerals-table-process-formula formula table row col)))
+                                                         (if (string-match-p "^[0-9.-]+$" simple-result)
+                                                             simple-result
+                                                           "0"))
+                                                       (error "0"))
                                                    ;; Evaluate simple arithmetic formulas
                                                    (let ((expanded (numerals-table-expand-simple-references formula table)))
                                                      (let ((result (numerals-calc-evaluate expanded (numerals-variables-get-all))))
@@ -429,6 +435,13 @@ Returns the position after the cell content where overlay should be placed."
                 (end-of-line)
                 (skip-chars-backward " \t")
                 (point)))))))))
+
+(defun numerals-table-get-overlay-result (table row col)
+  "Try to get the already calculated result for a cell from existing overlays.
+This helps avoid recursion when SUM formulas reference other SUM formulas."
+  ;; This is a simplified approach - in practice, we might need to implement
+  ;; a proper dependency resolution system
+  nil)
 
 (provide 'numerals-tables)
 ;;; numerals-tables.el ends here
