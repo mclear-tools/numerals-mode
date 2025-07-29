@@ -76,7 +76,7 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                 ;; Find the specific cell and get its overlay value
                 (numerals-simple-find-cell-value table-start row-num col-num))))))
     (error
-     (message "Debug: Cell value lookup error for %s.%s: %s" table-name cell-ref (error-message-string err))
+     (message "Cell lookup error for %s.%s: %s" table-name cell-ref (error-message-string err))
      nil)))
 
 (defun numerals-simple-get-totals-value (table-name col-num)
@@ -94,7 +94,6 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
             (let ((overlays-found '())
                   (line-start (line-beginning-position))
                   (line-end (line-end-position)))
-              (message "Debug: Searching TOTALS overlays from %d to %d" line-start line-end)
               (dolist (overlay (overlays-in line-start line-end))
                 (when (overlay-get overlay 'numerals-overlay)
                   (let ((display-text (overlay-get overlay 'display)))
@@ -105,14 +104,13 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                             overlays-found)))))
               ;; Sort by position and return the requested column
               (setq overlays-found (sort overlays-found (lambda (a b) (< (car a) (car b)))))
-              (message "Debug TOTALS: table=%s col=%d found %d overlays" table-name col-num (length overlays-found))
               (if (< col-num (length overlays-found))
                   (cdr (nth col-num overlays-found))
                 (progn
-                  (message "Debug TOTALS ERROR: col-num %d >= length %d" col-num (length overlays-found))
+                  (message "TOTALS column %d not found (only %d available)" col-num (length overlays-found))
                   nil))))))
     (error
-     (message "Debug: TOTALS function error: %s" (error-message-string err))
+     (message "TOTALS lookup error: %s" (error-message-string err))
      nil)))
 
 (defun numerals-simple-find-cell-value (table-start row-num col-num)
@@ -141,10 +139,10 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
           (if (and found-target (= current-row row-num) (looking-at "^[ \t]*|"))
               (numerals-simple-get-cell-overlay-at-column col-num)
             (progn
-              (message "Debug: Target row %d not found in table (only found %d rows)" row-num current-row)
+              (message "Target row %d not found in table (only found %d rows)" row-num current-row)
               nil))))
     (error
-     (message "Debug: Find cell value error: %s" (error-message-string err))
+     (message "Cell lookup error: %s" (error-message-string err))
      nil)))
 
 (defun numerals-simple-get-cell-overlay-at-column (col-num)
@@ -186,11 +184,11 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                               (setq found-value (string-trim display-text))))))
                       found-value)
                   (progn
-                    (message "Debug: Invalid cell bounds - start=%d end=%d buffer-size=%d" 
+                    (message "Invalid cell bounds - start=%d end=%d buffer-size=%d" 
                              cell-start cell-end (buffer-size))
                     nil)))))))
     (error
-     (message "Debug: Cell overlay function error: %s" (error-message-string err))
+     (message "Cell overlay error: %s" (error-message-string err))
      nil)))
 
 (defun numerals-simple-column-to-number (col-letters)

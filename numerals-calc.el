@@ -59,7 +59,7 @@ Returns a plist with :value (the result) and :error (error message if any)."
                                         (numerals-table-refs-substitute expression variables)
                                       expression)
                                   (error
-                                   (message "Debug: Table substitution error: %s" (error-message-string table-err))
+                                   (message "Table substitution error: %s" (error-message-string table-err))
                                    expression)))
              ;; Then substitute variables
              (substituted (if variables
@@ -91,8 +91,7 @@ Returns a plist with :value (the result) and :error (error message if any)."
          (t
           (list :value calc-eval-result :error nil))))
     (error
-     (message "Debug: calc-evaluate main error: %s" (error-message-string err))
-     (message "Debug: calc-evaluate error data: %s" err)
+     (message "Calculation error: %s" (error-message-string err))
      (list :value nil :error (error-message-string err)))))
 
 (defun numerals-calc-format-result (result)
