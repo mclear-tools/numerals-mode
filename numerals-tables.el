@@ -172,20 +172,30 @@ If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
                     (t (nth (- row 1) data))))
          (raw-value (when (and row-data (> col 0) (<= col (length row-data)))
                       (nth (- col 1) row-data))))
+    ;; (message "DEBUG get-cell: row=%d col=%d data-len=%d headers=%s row-data-len=%s" 
+    ;;        row col (length data) (if headers "yes" "no") (if row-data (length row-data) "nil"))
       (if (and evaluate-formulas raw-value 
              (string-match "^[ \t]*=[ \t]*\\(.+\\)" raw-value))
         ;; This is a formula - evaluate it
-        (let ((formula (match-string 1 raw-value))
+        (let ((formula (condition-case err
+                           (match-string 1 raw-value)
+                         (error 
+                          (message "ERROR in match-string: raw='%s' error='%s'" raw-value (error-message-string err))
+                          nil)))
               (cell-id (format "%s-%s" row col)))
-          (if (member cell-id numerals-table-evaluation-stack)
-              ;; Circular reference detected
-              "0"
-            (condition-case nil
-                (let ((numerals-table-evaluation-stack 
-                       (cons cell-id numerals-table-evaluation-stack)))
-                  (numerals-table-process-formula formula table row col))
-              (error "Error"))))
+          (if formula
+              (if (member cell-id numerals-table-evaluation-stack)
+                  ;; Circular reference detected
+                  "0"
+                (condition-case nil
+                    (let ((numerals-table-evaluation-stack 
+                           (cons cell-id numerals-table-evaluation-stack)))
+                      (numerals-table-process-formula formula table row col))
+                  (error "Error")))
+            "Error"))
       ;; Return raw value
+      (when (and (= row 3) (= col 2)) 
+        (message "DEBUG get-cell B3: eval=%s raw='%s' raw-len=%d" evaluate-formulas raw-value (if raw-value (length raw-value) 0)))
       raw-value)))
 
 (defun numerals-table-get-range-values (table range-spec &optional evaluate-formulas)
@@ -292,13 +302,20 @@ Returns a list of numbers, skipping non-numeric values."
   "Process FORMULA in the context of TABLE at CURRENT-ROW and CURRENT-COL.
 Returns the calculated result as a string."
   (condition-case err
-      (let ((expanded (numerals-table-expand-references formula table current-row current-col)))
-        ;; Use numerals-calc to evaluate the expanded expression with variables
-        (let ((result (numerals-calc-evaluate expanded (numerals-variables-get-all))))
-          (if (plist-get result :error)
-              (format "Error: %s" (plist-get result :error))
-            (numerals-calc-format-result (plist-get result :value)))))
-    (error (format "Error: %s" (error-message-string err)))))
+      (let ((expanded (condition-case expand-err
+                          (numerals-table-expand-references formula table current-row current-col)
+                        (error 
+                         (message "ERROR in expand-references: formula='%s' error='%s'" formula (error-message-string expand-err))
+                         formula))))
+        ;; Use calc directly since we've already expanded all references
+        (let ((calc-result (condition-case nil (calc-eval expanded) (error "Error"))))
+          (let ((result (list :value (if (stringp calc-result) calc-result (format "%s" calc-result)) :error nil)))
+            (if (plist-get result :error)
+                (format "Error: %s" (plist-get result :error))
+              (numerals-calc-format-result (plist-get result :value))))))
+    (error 
+     (message "DEBUG process-formula ERROR: formula='%s' error='%s'" formula (error-message-string err))
+     (format "Error: %s" (error-message-string err)))))
 
 (defun numerals-table-expand-references (formula table &optional current-row current-col)
   "Expand all table references in FORMULA using TABLE data.
@@ -333,17 +350,30 @@ Replaces cell references with their values and function calls with results."
                       (condition-case err
                           (let ((cell (numerals-table-parse-reference ref)))
                             (if cell
-                                (let ((value (numerals-table-get-cell table
-                                                                     (plist-get cell :row)
-                                                                     (plist-get cell :col)
-                                                                     t))) ; evaluate formulas
-                                  (or value "0"))
+                                (let* ((row (plist-get cell :row))
+                                       (col (plist-get cell :col))
+                                       (value (numerals-table-get-cell table row col nil))) ; get raw value first
+                                  ;; Debug: add a message to see what we're getting
+                                  ;; (message "DEBUG expand-ref: %s -> row=%d col=%d value='%s'" ref row col value)
+                                  (let ((replacement 
+                                         (if (and value (not (string-match "^[ \t]*=" value)))
+                                             ;; It's a literal value - use it directly
+                                             (string-trim value)
+                                           ;; It's a formula - try to evaluate it, but avoid infinite recursion
+                                           (condition-case nil
+                                               (let ((eval-value (numerals-table-get-cell table row col t)))
+                                                 (if eval-value
+                                                     (string-trim eval-value)
+                                                   "0"))
+                                             (error "0")))))
+                                    ;; (message "DEBUG expand-ref: %s replaced with '%s'" ref replacement)
+                                    replacement))
                               "0"))
                         (error "0"))))
                   result t))
     
     ;; Replace variable references with their values (for variables that aren't cell references)
-    (let ((variables (numerals-variables-get-all)))
+    (let ((variables (condition-case nil (numerals-variables-get-all) (error '()))))
       (dolist (var variables)
         (let ((var-name (car var))
               (var-value (cdr var)))

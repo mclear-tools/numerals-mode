@@ -229,21 +229,25 @@ Pads to exact original length for perfect table alignment."
 
 (defun numerals-reprocess-table-if-needed ()
   "Re-process table only if it contains formulas that reference variables."
-  (when-let ((table (numerals-table-parse)))
-    (let ((data (plist-get table :data))
-          (needs-reprocessing nil))
-      ;; Check if any formula references variables
-      (dolist (row data)
-        (dolist (cell row)
-          (when (string-match "^\\s-*=\\s-*\\(.+\\)" cell)
-            (let* ((formula (match-string 1 cell))
-                   (variables (numerals-parser-extract-variables formula)))
-              (when variables
-                (setq needs-reprocessing t))))))
-      ;; Only reprocess if needed and clear old overlays first
-      (when needs-reprocessing
-        (numerals-clear-table-overlays table)
-        (numerals-process-table)))))
+  (let ((table-start (point)))
+    (when-let ((table (numerals-table-parse)))
+      (let ((data (plist-get table :data))
+            (needs-reprocessing nil))
+        ;; Check if any formula references variables or other cells
+        (dolist (row data)
+          (dolist (cell row)
+            (when (string-match "^\\s-*=\\s-*\\(.+\\)" cell)
+              (let* ((formula (match-string 1 cell))
+                     (variables (numerals-parser-extract-variables formula))
+                     (has-cell-refs (string-match-p "\\b[A-Z]+[0-9]+\\b" formula)))
+                (when (or variables has-cell-refs)
+                  (setq needs-reprocessing t))))))
+        ;; Only reprocess if needed and hasn't been reprocessed yet
+        (when (and needs-reprocessing
+                   (not (member (cons table-start 'reprocessed) numerals-processed-positions)))
+          (numerals-clear-table-overlays table)
+          (numerals-process-table)
+          (push (cons table-start 'reprocessed) numerals-processed-positions))))))
 
 (defun numerals-clear-table-overlays (table)
   "Clear overlays within the TABLE bounds."
@@ -365,13 +369,68 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
         (let* ((formula (match-string 1 cell))
                (result (numerals-table-process-formula formula table row-num col-num))
                (formula-text (concat "=" formula)))
-          ;; Search for the formula text directly in the table
+          ;; Search for the formula text at the specific row/column position
           (save-excursion
-            (goto-char (car (plist-get table :bounds)))
-            (when (search-forward formula-text (cdr (plist-get table :bounds)) t)
-              (let ((formula-start (- (point) (length formula-text)))
-                    (formula-end (point)))
-                (numerals-display-table-result formula-start formula-end result)))))))))
+            (let ((found-position (numerals-find-formula-at-position table row-num col-num formula-text)))
+              ;; (message "DEBUG position: Formula '%s' -> result '%s', position %s" 
+              ;;        formula-text result found-position)
+              (when found-position
+                (numerals-display-table-result (car found-position) (cdr found-position) result))
+)))))))
+
+(defun numerals-find-formula-at-position (table row-num col-num formula-text)
+  "Find the exact buffer position of FORMULA-TEXT at ROW-NUM, COL-NUM in TABLE.
+Returns a cons (START . END) of the formula position, or nil if not found."
+  (let* ((bounds (plist-get table :bounds))
+         (start-pos (car bounds))
+         (end-pos (cdr bounds)))
+    (save-excursion
+      (goto-char start-pos)
+      (let ((current-row 0))
+        ;; Find the target row (skip separator lines like table parser does)
+        (while (and (< (point) end-pos) (/= current-row row-num))
+          (when (looking-at "^[ \t]*|\\(.*\\)|[ \t]*$")
+            (let ((content (match-string 1)))
+              ;; Only count non-separator lines
+              (unless (string-match-p "^[ \t:+|-]+$" content)
+                (setq current-row (1+ current-row)))))
+          (when (/= current-row row-num)
+            (forward-line 1)))
+        
+        ;; Now we're at the target row - search for formula-text in this line only
+        (when (= current-row row-num)
+          ;; (message "DEBUG: Found target row %d at position %d" current-row (point))
+          (let ((line-start (point))  
+                (line-end (line-end-position))
+                (col-count 0)
+                (found-pos nil))
+            ;; Parse cells in this row to find the target column
+            (when (looking-at "^[ \t]*|\\(.*\\)|[ \t]*$")
+              (let ((content (match-string 1))
+                    (search-pos (1+ line-start))) ; Start after first |
+                ;; (message "DEBUG: Row content: '%s'" content)
+                ;; Split content by | and search for our target column
+                (dolist (cell (split-string content "|" t))
+                  (setq col-count (1+ col-count))
+                  (let* ((trimmed-cell (string-trim cell))
+                         (cell-start search-pos)
+                         (cell-end (+ search-pos (length cell))))
+                    ;; (message "DEBUG: Col %d: cell='%s', trimmed='%s', target='%s'" 
+                    ;;        col-count cell trimmed-cell formula-text)
+                    (when (and (= col-count col-num) (string= trimmed-cell formula-text))
+                      ;; Found our target cell with matching content
+                      ;; (message "DEBUG: MATCH found at col %d!" col-count)
+                      ;; Find the start position of the trimmed content within the cell
+                      (let* ((leading-whitespace (- (length cell) (length (string-trim-left cell))))
+                             (trimmed-start (+ cell-start leading-whitespace))
+                             ;; Use the full cell width to accommodate longer results
+                             (cell-end-pos (+ cell-start (length cell)))
+                             (trimmed-end cell-end-pos))
+                        ;; (message "DEBUG: Position calc: cell='%s' formula='%s' cell-start=%d trimmed-end=%d" 
+                        ;;        cell formula-text cell-start trimmed-end)
+                        (setq found-pos (cons trimmed-start trimmed-end))))
+                    (setq search-pos (1+ cell-end))))))
+            found-pos))))))
 
 (defun numerals-recalculate ()
   "Manually trigger recalculation of all expressions."
