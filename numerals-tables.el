@@ -273,31 +273,6 @@ VALUES is a list of strings that may contain numbers."
       (progn
         0))))
 
-(defun numerals-table-average (values)
-  "Calculate the average of VALUES.
-VALUES is a list of strings that may contain numbers."
-  (let ((numbers (numerals-table-extract-numbers values)))
-    (if numbers
-        (/ (apply #'+ numbers) (float (length numbers)))
-      0)))
-
-(defun numerals-table-count (values)
-  "Count non-empty cells in VALUES."
-  (cl-count-if (lambda (v) (not (string-empty-p (string-trim v)))) values))
-
-(defun numerals-table-max (values)
-  "Find the maximum value in VALUES."
-  (let ((numbers (numerals-table-extract-numbers values)))
-    (if numbers
-        (apply #'max numbers)
-      0)))
-
-(defun numerals-table-min (values)
-  "Find the minimum value in VALUES."
-  (let ((numbers (numerals-table-extract-numbers values)))
-    (if numbers
-        (apply #'min numbers)
-      0)))
 
 (defvar-local numerals-table-evaluation-stack nil
   "Stack to track cells currently being evaluated to prevent recursion.")
@@ -383,65 +358,7 @@ Replaces cell references with their values and function calls with results."
     
     result))
 
-;;; Cell Position Finding
 
-(defun numerals-table-find-cell-position (table row-num col-num)
-  "Find the buffer position of cell at ROW-NUM, COL-NUM in TABLE.
-Returns the position after the cell content where overlay should be placed."
-  (save-excursion
-    (goto-char (car (plist-get table :bounds)))
-    ;; Use a simpler approach: find the actual table lines
-    (let ((table-lines '())
-          (line-positions '()))
-      ;; Collect all actual table data lines (skip separators)
-      (while (< (point) (cdr (plist-get table :bounds)))
-        (beginning-of-line)
-        (when (looking-at "^[ \t]*|")
-          (let ((line-content (buffer-substring (line-beginning-position) (line-end-position))))
-            (unless (string-match-p "^[ \t]*|[ \t:+-]+|" line-content)
-              ;; This is a data line, not a separator
-              (push (point) line-positions)
-              (push line-content table-lines))))
-        (forward-line 1))
-      (setq table-lines (nreverse table-lines))
-      (setq line-positions (nreverse line-positions))
-      
-      ;; Go to the target row
-      (when (<= row-num (length line-positions))
-        (goto-char (nth (1- row-num) line-positions))
-        
-        ;; Find the target column
-        (beginning-of-line)
-        (when (looking-at "^[ \t]*|")
-          (skip-chars-forward " \t")
-          (forward-char 1) ; Move past the first |
-          (let ((current-col 1)
-                (cell-start (point)))
-            ;; Move to the target column
-            (while (< current-col col-num)
-              (when (search-forward "|" (line-end-position) t)
-                (setq current-col (1+ current-col))
-                (when (< current-col col-num)
-                  (setq cell-start (point)))))
-            ;; Now find the end of the current cell content
-            (when (= current-col col-num)
-              (goto-char cell-start)
-              (if (search-forward "|" (line-end-position) t)
-                  (progn
-                    (backward-char 1) ; Before the |
-                    (skip-chars-backward " \t")
-                    (point))
-                ;; Last column - go to end of line
-                (end-of-line)
-                (skip-chars-backward " \t")
-                (point)))))))))
-
-(defun numerals-table-get-overlay-result (table row col)
-  "Try to get the already calculated result for a cell from existing overlays.
-This helps avoid recursion when SUM formulas reference other SUM formulas."
-  ;; This is a simplified approach - in practice, we might need to implement
-  ;; a proper dependency resolution system
-  nil)
 
 (provide 'numerals-tables)
 ;;; numerals-tables.el ends here

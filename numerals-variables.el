@@ -29,11 +29,6 @@ EXPRESSION and DEPENDENCIES are ignored in save-based mode."
   ;; Store the value
   (puthash name value numerals-variables-table))
 
-(defun numerals-variables-get (name)
-  "Get the value of variable NAME.
-Returns nil if the variable doesn't exist."
-  (gethash name numerals-variables-table))
-
 (defun numerals-variables-get-all ()
   "Return an alist of all variables and their values."
   (let ((result nil))
@@ -41,11 +36,6 @@ Returns nil if the variable doesn't exist."
                (push (cons k v) result))
              numerals-variables-table)
     result))
-
-(defun numerals-variables-delete (name)
-  "Delete variable NAME and clean up its dependencies."
-  ;; Remove from hash table
-  (remhash name numerals-variables-table))
 
 (defun numerals-variables-clear ()
   "Clear all variables and dependencies."

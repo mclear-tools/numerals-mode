@@ -17,6 +17,7 @@
 
 (require 'calc)
 (require 'calc-ext)
+(require 'cl-lib)
 
 ;; Ensure calc is properly initialized
 (unless (featurep 'calc-aent)
@@ -29,22 +30,24 @@
   "Substitute VARIABLES in EXPRESSION with their values.
 VARIABLES is an alist of (name . value) pairs.
 Returns the expression with variables replaced by their values."
-  (let ((result expression))
-    ;; Sort variables by length (longest first) to avoid partial replacements
-    (dolist (var (sort variables
-                       (lambda (a b)
-                         (> (length (car a)) (length (car b))))))
-      (let ((name (car var))
-            (value (cdr var)))
-        ;; Use word boundaries to ensure we don't replace partial matches
-        ;; Skip variables with nil values to avoid substituting "nil" as text
-        (if value
-            (progn
-              (setq result (replace-regexp-in-string
-                            (concat "\\<" (regexp-quote name) "\\>")
-                            (format "%s" value)
-                            result))))))
-    result))
+  (if (null variables)
+      expression
+    (let ((result expression)
+          ;; Sort a copy to avoid modifying the original list
+          (sorted-vars (cl-sort (copy-sequence variables)
+                               (lambda (a b)
+                                 (> (length (car a)) (length (car b)))))))
+      ;; Process variables from longest name to shortest to avoid partial matches
+      (dolist (var sorted-vars)
+        (let ((name (car var))
+              (value (cdr var)))
+          ;; Skip variables with nil values to avoid substituting "nil" as text
+          (when value
+            (setq result (replace-regexp-in-string
+                         (concat "\\<" (regexp-quote name) "\\>")
+                         (format "%s" value)
+                         result)))))
+      result)))
 
 
 (defun numerals-calc-evaluate (expression &optional variables)
@@ -106,13 +109,6 @@ Handles number formatting and error display."
         (format "%.2f" num))))
    (t result)))
 
-(defun numerals-calc-validate-number (value)
-  "Validate that VALUE represents a valid number.
-Returns the normalized number string or nil if invalid."
-  (when (stringp value)
-    (let ((trimmed (string-trim value)))
-      (when (string-match-p "^-?[0-9]+\\(\\.[0-9]+\\)?$" trimmed)
-        trimmed))))
 
 (provide 'numerals-calc)
 ;;; numerals-calc.el ends here

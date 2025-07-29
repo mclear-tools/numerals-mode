@@ -77,11 +77,6 @@ Returns a list of variable names found in the expression."
         (setq pos (max (1+ pos) end))))
     (delete-dups (nreverse variables))))
 
-(defun numerals-parser-validate-expression (expression)
-  "Validate that EXPRESSION is safe to evaluate.
-Returns non-nil if the expression appears valid."
-  ;; Basic validation - ensure expression only contains safe characters
-  (string-match-p "^[A-Za-z0-9 +\\-*/^().]+$" expression))
 
 (provide 'numerals-parser)
 ;;; numerals-parser.el ends here

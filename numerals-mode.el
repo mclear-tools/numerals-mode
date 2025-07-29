@@ -158,37 +158,6 @@ Pads to exact original length for perfect table alignment."
     (push overlay numerals-display-overlays)))
 
 
-(defun numerals-display-table-result-with-column (start end result table col-num)
-  "Display RESULT as an overlay with column-aware alignment.
-Uses the maximum formula width for the column to ensure consistent alignment."
-  (let* ((original-text (buffer-substring start end))
-         (original-length (length original-text))
-         (column-widths (plist-get table :column-widths))
-         (column-width (if (and column-widths (< (1- col-num) (length column-widths)))
-                          (aref column-widths (1- col-num))
-                        original-length))
-         (result-length (length result))
-         ;; Always use original length to avoid breaking table structure
-         (padded-result (if (< result-length original-length)
-                           (let ((padding-needed (- original-length result-length)))
-                             ;; Right-align numbers
-                             (if (string-match-p "^[0-9.-]+$" result)
-                                 (concat (make-string padding-needed ?\s) result)
-                               (concat result (make-string padding-needed ?\s))))
-                         ;; If result is longer than original, truncate
-                         (if (> result-length original-length)
-                             (substring result 0 original-length)
-                           result)))
-         (overlay (make-overlay start end))
-         (text (propertize padded-result 'face 'numerals-calculated-face)))
-    ;; Configure the overlay to replace the text
-    (overlay-put overlay 'display text)
-    (overlay-put overlay 'numerals-overlay t)
-    ;; Add to our list for cleanup
-    (push overlay numerals-display-overlays)))
-
-
-
 
 
 (defun numerals-update-buffer ()
@@ -379,14 +348,15 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
         (when (and (boundp 'numerals-mode) numerals-mode)
           (push buffer enabled-buffers)
           (numerals-mode -1))))
-    ;; Reload all modules
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-parser.el")
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-calc.el")
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-table-refs-simple.el")
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-variables.el")
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-display.el")
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-tables.el")
-    (load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-mode.el")
+    ;; Reload all modules using dynamic path resolution
+    (let ((base-dir (file-name-directory (or load-file-name buffer-file-name))))
+      (load (expand-file-name "numerals-parser.el" base-dir))
+      (load (expand-file-name "numerals-calc.el" base-dir))
+      (load (expand-file-name "numerals-table-refs-simple.el" base-dir))
+      (load (expand-file-name "numerals-variables.el" base-dir))
+      (load (expand-file-name "numerals-display.el" base-dir))
+      (load (expand-file-name "numerals-tables.el" base-dir))
+      (load (expand-file-name "numerals-mode.el" base-dir)))
     ;; Re-enable in all previously enabled buffers
     (dolist (buffer enabled-buffers)
       (when (buffer-live-p buffer)

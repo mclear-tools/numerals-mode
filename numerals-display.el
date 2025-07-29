@@ -103,27 +103,6 @@ FACE-OVERRIDE can specify a specific face to use."
       (delete-overlay overlay)))
   (setq numerals-display-overlays nil))
 
-(defun numerals-display-update-line (pos parse-result variables)
-  "Update the display for a line at POS with PARSE-RESULT.
-VARIABLES is the current variable table."
-  (numerals-display-clear-line pos)
-  (let ((type (plist-get parse-result :type)))
-    (cond
-     ((eq type 'assignment)
-      (let* ((var-name (plist-get parse-result :variable))
-             (value (gethash var-name variables)))
-        (when value
-          (numerals-display-result pos value))))
-     ((eq type 'calculation)
-      (let* ((expression (plist-get parse-result :expression))
-             (calc-module (require 'numerals-calc nil t))
-             (result (when calc-module
-                       (numerals-calc-evaluate expression 
-                                               (numerals-variables-get-all)))))
-        (if result
-            (numerals-display-result pos 
-                                     (numerals-calc-format-result result))
-          (numerals-display-result pos "Error" t)))))))
 
 (provide 'numerals-display)
 ;;; numerals-display.el ends here
