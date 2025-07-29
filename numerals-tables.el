@@ -180,7 +180,7 @@ If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
         (let ((formula (condition-case err
                            (match-string 1 raw-value)
                          (error 
-                          (message "ERROR in match-string: raw='%s' error='%s'" raw-value (error-message-string err))
+                          ;; (message "ERROR in match-string: raw='%s' error='%s'" raw-value (error-message-string err))
                           nil)))
               (cell-id (format "%s-%s" row col)))
           (if formula
@@ -194,8 +194,8 @@ If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
                   (error "Error")))
             "Error"))
       ;; Return raw value
-      (when (and (= row 3) (= col 2)) 
-        (message "DEBUG get-cell B3: eval=%s raw='%s' raw-len=%d" evaluate-formulas raw-value (if raw-value (length raw-value) 0)))
+      ;; (when (and (= row 3) (= col 2)) 
+      ;;   (message "DEBUG get-cell B3: eval=%s raw='%s' raw-len=%d" evaluate-formulas raw-value (if raw-value (length raw-value) 0)))
       raw-value)))
 
 (defun numerals-table-get-range-values (table range-spec &optional evaluate-formulas)
@@ -287,6 +287,9 @@ VALUES is a list of strings that may contain numbers."
 (defvar-local numerals-table-evaluation-stack nil
   "Stack to track cells currently being evaluated to prevent recursion.")
 
+(defvar-local numerals-table-expansion-stack nil
+  "Stack to track cells currently being expanded to prevent recursion.")
+
 (defun numerals-table-extract-numbers (values)
   "Extract numeric values from a list of string VALUES.
 Returns a list of numbers, skipping non-numeric values."
@@ -305,7 +308,7 @@ Returns the calculated result as a string."
       (let ((expanded (condition-case expand-err
                           (numerals-table-expand-references formula table current-row current-col)
                         (error 
-                         (message "ERROR in expand-references: formula='%s' error='%s'" formula (error-message-string expand-err))
+                         ;; (message "ERROR in expand-references: formula='%s' error='%s'" formula (error-message-string expand-err))
                          formula))))
         ;; Use calc directly since we've already expanded all references
         (let ((calc-result (condition-case nil (calc-eval expanded) (error "Error"))))
@@ -314,7 +317,7 @@ Returns the calculated result as a string."
                 (format "Error: %s" (plist-get result :error))
               (numerals-calc-format-result (plist-get result :value))))))
     (error 
-     (message "DEBUG process-formula ERROR: formula='%s' error='%s'" formula (error-message-string err))
+     ;; (message "DEBUG process-formula ERROR: formula='%s' error='%s'" formula (error-message-string err))
      (format "Error: %s" (error-message-string err)))))
 
 (defun numerals-table-expand-references (formula table &optional current-row current-col)
@@ -359,14 +362,22 @@ Replaces cell references with their values and function calls with results."
                                          (if (and value (not (string-match "^[ \t]*=" value)))
                                              ;; It's a literal value - use it directly
                                              (string-trim value)
-                                           ;; It's a formula - try to evaluate it, but avoid infinite recursion
-                                           (condition-case nil
-                                               (let ((eval-value (numerals-table-get-cell table row col t)))
-                                                 (if eval-value
-                                                     (string-trim eval-value)
-                                                   "0"))
-                                             (error "0")))))
-                                    ;; (message "DEBUG expand-ref: %s replaced with '%s'" ref replacement)
+                                           ;; It's a formula - try to evaluate it with recursion protection
+                                           (let ((ref-key (format "%d-%d" row col)))
+                                             (if (member ref-key numerals-table-expansion-stack)
+                                                 ;; Avoid infinite recursion
+                                                 "0"
+                                               (condition-case nil
+                                                   (let ((numerals-table-expansion-stack 
+                                                          (cons ref-key numerals-table-expansion-stack)))
+                                                     ;; Try to get the evaluated result
+                                                     (let ((eval-value (numerals-table-get-cell table row col t)))
+                                                       ;; (when (string-match-p "^[BD][34]$" ref)
+                                                       ;;   (message "DEBUG eval-chain: %s raw='%s' eval='%s'" ref value eval-value))
+                                                       (if eval-value (string-trim eval-value) "0")))
+                                                 (error "0")))))))
+                                    ;; (when (string-match-p "^[BD][34]$" ref)
+                                    ;;   (message "DEBUG expand-ref: %s replaced with '%s'" ref replacement))
                                     replacement))
                               "0"))
                         (error "0"))))
