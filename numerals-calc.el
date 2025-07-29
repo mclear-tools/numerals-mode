@@ -43,8 +43,7 @@ Returns the expression with variables replaced by their values."
               (setq result (replace-regexp-in-string
                             (concat "\\<" (regexp-quote name) "\\>")
                             (format "%s" value)
-                            result)))
-)))
+                            result))))))
     result))
 
 

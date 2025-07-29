@@ -16,7 +16,7 @@
 ;;; Code:
 
 (defconst numerals-parser-variable-name-regexp
-  "\\([A-Za-z][A-Za-z0-9_ ]*[A-Za-z0-9_]\\|[A-Za-z]\\)"
+  "\\(?:[A-Za-z][A-Za-z0-9_ ]*[A-Za-z0-9_]\\|[A-Za-z]\\)"
   "Regexp matching valid variable names.
 Variable names can contain letters, numbers, underscores and spaces, but must
 start with a letter and end with a letter, number, or underscore.")
@@ -25,7 +25,7 @@ start with a letter and end with a letter, number, or underscore.")
   (concat "^\\s-*\\(" numerals-parser-variable-name-regexp "\\)\\s-*=\\s-*\\(.+\\)$")
   "Regexp matching variable assignment lines.
 Group 1: variable name
-Group 3: expression")
+Group 2: expression")
 
 (defconst numerals-parser-calculation-regexp
   "^\\s-*=\\s-*\\(.+\\)$"
@@ -45,7 +45,7 @@ Returns a plist with the following properties:
      ((string-match numerals-parser-assignment-regexp trimmed)
       (list :type 'assignment
             :variable (string-trim (match-string 1 trimmed))
-            :expression (string-trim (match-string 3 trimmed))
+            :expression (string-trim (match-string 2 trimmed))
             :line line))
      ;; Standalone calculation
      ((string-match numerals-parser-calculation-regexp trimmed)

@@ -215,52 +215,52 @@ Returns the parse result for the line."
                 (line-end-position)))
          (parse-result (numerals-parser-parse-line line))
          (type (plist-get parse-result :type)))
-    (cond
-     ;; Handle variable assignment
-     ((eq type 'assignment)
-      (let* ((var-name (plist-get parse-result :variable))
-             (expression (plist-get parse-result :expression))
-             (dependencies (numerals-parser-extract-variables expression))
-             (calc-result (numerals-calc-evaluate expression
-                                                 (numerals-variables-get-all)))
-             (result (plist-get calc-result :value))
-             (error-msg (plist-get calc-result :error))
-             ;; Check if this is a simple literal or a calculation
-             (is-literal (and result
-                              (string-match-p "^[0-9.-]+$" (string-trim expression))
-                              (null dependencies))))
-        (if result
-            (progn
-              (numerals-variables-set var-name result expression dependencies)
+        (cond
+         ;; Handle variable assignment
+         ((eq type 'assignment)
+          (let* ((var-name (plist-get parse-result :variable))
+                 (expression (plist-get parse-result :expression))
+                 (dependencies (numerals-parser-extract-variables expression))
+                 (calc-result (numerals-calc-evaluate expression
+                                                     (numerals-variables-get-all)))
+                 (result (plist-get calc-result :value))
+                 (error-msg (plist-get calc-result :error))
+                 ;; Check if this is a simple literal or a calculation
+                 (is-literal (and result
+                                  (string-match-p "^[0-9.-]+$" (string-trim expression))
+                                  (null dependencies))))
+            (if result
+                (progn
+                  (numerals-variables-set var-name result expression dependencies)
+                  (numerals-display-result (point) 
+                                           (numerals-calc-format-result result)
+                                           nil
+                                           (if is-literal nil 'numerals-calculated-face))
+                  ;; Add bold formatting to the variable name
+                  (numerals-display-bold-variable-name (point)))
+              (progn
+                ;; Even if calculation failed, set the variable to nil so it's defined
+                (numerals-variables-set var-name nil expression dependencies)
+                (numerals-display-result (point) 
+                                         (or error-msg "Error")
+                                         t)
+                ;; Add bold formatting to the variable name even if calculation failed
+                (numerals-display-bold-variable-name (point))))))
+         ;; Handle standalone calculation
+         ((eq type 'calculation)
+          (let* ((expression (plist-get parse-result :expression))
+                 (calc-result (numerals-calc-evaluate expression
+                                                     (numerals-variables-get-all)))
+                 (result (plist-get calc-result :value))
+                 (error-msg (plist-get calc-result :error)))
+            (if result
+                (numerals-display-result (point)
+                                         (numerals-calc-format-result result)
+                                         nil
+                                         'numerals-calculated-face)
               (numerals-display-result (point) 
-                                       (numerals-calc-format-result result)
-                                       nil
-                                       (if is-literal nil 'numerals-calculated-face))
-              ;; Add bold formatting to the variable name
-              (numerals-display-bold-variable-name (point)))
-          (progn
-            ;; Even if calculation failed, set the variable to nil so it's defined
-            (numerals-variables-set var-name nil expression dependencies)
-            (numerals-display-result (point) 
-                                     (or error-msg "Error")
-                                     t)
-            ;; Add bold formatting to the variable name even if calculation failed
-            (numerals-display-bold-variable-name (point)))))
-     ;; Handle standalone calculation
-     ((eq type 'calculation)
-      (let* ((expression (plist-get parse-result :expression))
-             (calc-result (numerals-calc-evaluate expression
-                                                 (numerals-variables-get-all)))
-             (result (plist-get calc-result :value))
-             (error-msg (plist-get calc-result :error)))
-        (if result
-            (numerals-display-result (point)
-                                     (numerals-calc-format-result result)
-                                     nil
-                                     'numerals-calculated-face)
-          (numerals-display-result (point) 
-                                   (or error-msg "Error")
-                                   t)))))
+                                       (or error-msg "Error")
+                                       t)))))
     parse-result))
 
 (defun numerals-process-table ()
@@ -376,7 +376,7 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
     ;; Find all buffers with numerals-mode enabled and disable it
     (dolist (buffer (buffer-list))
       (with-current-buffer buffer
-        (when numerals-mode
+        (when (and (boundp 'numerals-mode) numerals-mode)
           (push buffer enabled-buffers)
           (numerals-mode -1))))
     ;; Reload all modules
