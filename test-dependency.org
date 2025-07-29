@@ -1,0 +1,9 @@
+#+NAME: Budget
+| Employee | Salary | FICA    |
+|----------|--------|---------|
+| Colin    |  50000 | =B2*0.0765 |
+| TOTALS   |        | =SUM(B2:C2) |
+
+TotalEmployeeCost = Budget.C2 + Budget.C3
+NET = TotalEmployeeCost - 1000
+Distribution = NET * 0.2

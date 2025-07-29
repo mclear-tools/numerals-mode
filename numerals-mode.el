@@ -161,18 +161,25 @@ Pads to exact original length for perfect table alignment."
 
 
 (defun numerals-update-buffer ()
-  "Update all calculations in the current buffer."
+  "Update all calculations in the current buffer using two-pass evaluation."
   (when numerals-mode
     (save-excursion
       ;; Clear existing display
       (numerals-display-clear-all)
       ;; Clear and rebuild variables
       (numerals-variables-clear)
-      ;; Process each line
+      
+      ;; Pass 1: Process all tables first
       (goto-char (point-min))
       (while (not (eobp))
-        (if (numerals-table-at-point-p)
-            (numerals-process-table)
+        (when (numerals-table-at-point-p)
+          (numerals-process-table))
+        (forward-line 1))
+      
+      ;; Pass 2: Process all non-table lines (variables and calculations)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (unless (numerals-table-at-point-p)
           (numerals-process-line))
         (forward-line 1)))))
 
