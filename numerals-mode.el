@@ -160,88 +160,100 @@ Pads to exact original length for perfect table alignment."
 
 
 
+(defvar-local numerals-processed-positions nil
+  "Set of buffer positions that have already been processed in this update cycle.")
+
 (defun numerals-update-buffer ()
-  "Update all calculations in the current buffer using 4-pass dependency resolution."
+  "Update all calculations in the current buffer with reliable dependency resolution."
   (when numerals-mode
     (save-excursion
-      ;; Clear existing display
+      ;; Clear existing display and state
       (numerals-display-clear-all)
-      ;; Clear and rebuild variables
       (numerals-variables-clear)
+      (setq numerals-processed-positions nil)
       
-      ;; Pass 1: Process simple variables (literals and basic expressions only)
+      ;; Pass 1: Process simple variables first (literals and basic math)
       (goto-char (point-min))
       (while (not (eobp))
         (unless (numerals-table-at-point-p)
-          (numerals-process-line-if-simple))
+          (numerals-process-line-if-no-dependencies))
         (forward-line 1))
       
-      ;; Pass 2: Process all tables first time (can now use simple variables)
+      ;; Pass 2: Process all tables (can now use simple variables)
       (goto-char (point-min))
       (while (not (eobp))
         (when (numerals-table-at-point-p)
-          (numerals-process-table))
+          (numerals-process-table-once))
         (forward-line 1))
       
-      ;; Pass 3: Process complex variables (can reference table cells)
+      ;; Pass 3: Process remaining variables (can reference tables and other variables)
       (goto-char (point-min))
       (while (not (eobp))
         (unless (numerals-table-at-point-p)
-          (numerals-process-line-if-complex))
+          (let ((pos (point)))
+            (unless (member pos numerals-processed-positions)
+              (numerals-process-line)
+              (push pos numerals-processed-positions))))
         (forward-line 1))
       
-      ;; Pass 4: Process any remaining variables 
-      (goto-char (point-min))
-      (while (not (eobp))
-        (unless (numerals-table-at-point-p)
-          (numerals-process-line))
-        (forward-line 1))
-      
-      ;; Pass 5: Re-process tables that may reference all variables
+      ;; Pass 4: Re-process only tables that have formulas referencing variables
       (goto-char (point-min))
       (while (not (eobp))
         (when (numerals-table-at-point-p)
-          (numerals-process-table))
+          (numerals-reprocess-table-if-needed))
         (forward-line 1)))))
 
-(defun numerals-expression-is-simple-p (expression)
-  "Return t if EXPRESSION is simple (no table references and only uses defined variables).
-Simple expressions contain only literals, numbers, operators, and already-defined variables."
-  (and 
-   ;; Must not contain table references
-   (not (string-match-p "\\b[A-Za-z_][A-Za-z0-9_]*\\.[A-Z]+[0-9]+\\b\\|\\b[A-Za-z_][A-Za-z0-9_]*\\.TOTALS\\[" expression))
-   ;; All variable references must already be defined
-   (let ((variables (numerals-parser-extract-variables expression))
-         (defined-vars (mapcar #'car (numerals-variables-get-all)))
-         (all-defined t))
-     (dolist (var variables)
-       (unless (member var defined-vars)
-         (setq all-defined nil)))
-     all-defined)))
-
-(defun numerals-process-line-if-simple ()
-  "Process the current line only if it contains a simple expression."
+(defun numerals-process-line-if-no-dependencies ()
+  "Process the current line only if it has no variable or table dependencies."
   (let* ((line (buffer-substring-no-properties
                 (line-beginning-position)
                 (line-end-position)))
          (parse-result (numerals-parser-parse-line line))
          (type (plist-get parse-result :type))
          (expression (plist-get parse-result :expression)))
-    (when (and expression (numerals-expression-is-simple-p expression))
-      (numerals-process-line))
+    (when (and (eq type 'assignment) expression)
+      ;; Check if expression has no variables or table references
+      (let ((variables (numerals-parser-extract-variables expression))
+            (has-table-refs (string-match-p "\\b[A-Za-z_][A-Za-z0-9_]*\\.[A-Z]+[0-9]+\\b\\|\\b[A-Za-z_][A-Za-z0-9_]*\\.TOTALS\\[" expression)))
+        (when (and (null variables) (not has-table-refs))
+          (numerals-process-line)
+          (push (line-beginning-position) numerals-processed-positions))))
     parse-result))
 
-(defun numerals-process-line-if-complex ()
-  "Process the current line only if it contains a complex expression (with table references)."
-  (let* ((line (buffer-substring-no-properties
-                (line-beginning-position)
-                (line-end-position)))
-         (parse-result (numerals-parser-parse-line line))
-         (type (plist-get parse-result :type))
-         (expression (plist-get parse-result :expression)))
-    (when (and expression (not (numerals-expression-is-simple-p expression)))
-      (numerals-process-line))
-    parse-result))
+(defun numerals-process-table-once ()
+  "Process table only if it hasn't been processed yet."
+  (let ((table-start (point)))
+    (unless (member table-start numerals-processed-positions)
+      (numerals-process-table)
+      (push table-start numerals-processed-positions))))
+
+(defun numerals-reprocess-table-if-needed ()
+  "Re-process table only if it contains formulas that reference variables."
+  (when-let ((table (numerals-table-parse)))
+    (let ((data (plist-get table :data))
+          (needs-reprocessing nil))
+      ;; Check if any formula references variables
+      (dolist (row data)
+        (dolist (cell row)
+          (when (string-match "^\\s-*=\\s-*\\(.+\\)" cell)
+            (let* ((formula (match-string 1 cell))
+                   (variables (numerals-parser-extract-variables formula)))
+              (when variables
+                (setq needs-reprocessing t))))))
+      ;; Only reprocess if needed and clear old overlays first
+      (when needs-reprocessing
+        (numerals-clear-table-overlays table)
+        (numerals-process-table)))))
+
+(defun numerals-clear-table-overlays (table)
+  "Clear overlays within the TABLE bounds."
+  (let ((start (car (plist-get table :bounds)))
+        (end (cdr (plist-get table :bounds))))
+    (dolist (overlay (overlays-in start end))
+      (when (overlay-get overlay 'numerals-overlay)
+        (delete-overlay overlay)
+        (setq numerals-display-overlays
+              (delq overlay numerals-display-overlays))))))
 
 (defun numerals-process-line ()
   "Process the current line for calculations.
