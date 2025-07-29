@@ -173,7 +173,7 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                          (>= cell-start 1)
                          (>= cell-end 1)
                          (<= cell-start cell-end))
-                    ;; Look for numerals overlay in this cell
+                    ;; Look for numerals overlay in this cell, or fall back to literal text
                     (let ((found-value nil)
                           (overlays-found '()))
                       (dolist (overlay (overlays-in cell-start cell-end))
@@ -182,7 +182,12 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                             (push (cons (overlay-start overlay) display-text) overlays-found)
                             (when (stringp display-text)
                               (setq found-value (string-trim display-text))))))
-                      found-value)
+                      ;; If no overlay found, use the literal cell text
+                      (or found-value
+                          (let ((literal-text (string-trim cell-text)))
+                            ;; Only return if it looks like a number
+                            (when (string-match-p "^[0-9.-]+$" literal-text)
+                              literal-text))))
                   (progn
                     (message "Invalid cell bounds - start=%d end=%d buffer-size=%d" 
                              cell-start cell-end (buffer-size))

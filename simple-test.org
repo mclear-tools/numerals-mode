@@ -1,0 +1,6 @@
+#+NAME: Budget
+| Value |
+|-------|
+| 100   |
+
+Test = Budget.A2
