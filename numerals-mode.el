@@ -156,6 +156,35 @@ Pads to exact original length for perfect table alignment."
     ;; Add to our list for cleanup
     (push overlay numerals-display-overlays)))
 
+(defun numerals-display-table-result-with-column (start end result table col-num)
+  "Display RESULT as an overlay with column-aware alignment.
+Uses the maximum formula width for the column to ensure consistent alignment."
+  (let* ((original-text (buffer-substring start end))
+         (original-length (length original-text))
+         (column-widths (plist-get table :column-widths))
+         (column-width (if (and column-widths (< (1- col-num) (length column-widths)))
+                          (aref column-widths (1- col-num))
+                        original-length))
+         (result-length (length result))
+         ;; Always use original length to avoid breaking table structure
+         (padded-result (if (< result-length original-length)
+                           (let ((padding-needed (- original-length result-length)))
+                             ;; Right-align numbers
+                             (if (string-match-p "^[0-9.-]+$" result)
+                                 (concat (make-string padding-needed ?\s) result)
+                               (concat result (make-string padding-needed ?\s))))
+                         ;; If result is longer than original, truncate
+                         (if (> result-length original-length)
+                             (substring result 0 original-length)
+                           result)))
+         (overlay (make-overlay start end))
+         (text (propertize padded-result 'face 'numerals-calculated-face)))
+    ;; Configure the overlay to replace the text
+    (overlay-put overlay 'display text)
+    (overlay-put overlay 'numerals-overlay t)
+    ;; Add to our list for cleanup
+    (push overlay numerals-display-overlays)))
+
 
 
 
@@ -232,7 +261,10 @@ Advances point past the table."
     (let ((bounds (plist-get table :bounds))
           (data (plist-get table :data))
           (headers (plist-get table :headers))
-          (current-row 0))
+          (current-row 0)
+          (column-widths (numerals-calculate-table-column-widths table)))
+      ;; Store column widths in table for use by display function
+      (plist-put table :column-widths column-widths)
       ;; Process headers if they exist
       (when headers
         (setq current-row 1)
@@ -245,6 +277,26 @@ Advances point past the table."
           (setq data-row-index (1+ data-row-index))))
       ;; Move past the table
       (goto-char (cdr bounds)))))
+
+(defun numerals-calculate-table-column-widths (table)
+  "Calculate the maximum formula width for each column in TABLE.
+Returns a vector of column widths."
+  (let* ((data (plist-get table :data))
+         (headers (plist-get table :headers))
+         (all-rows (if headers (cons headers data) data))
+         (num-cols (if all-rows (length (car all-rows)) 0))
+         (column-widths (make-vector num-cols 0)))
+    ;; Find maximum formula length in each column
+    (dolist (row all-rows)
+      (let ((col-index 0))
+        (dolist (cell row)
+          (when (< col-index num-cols)
+            (when (string-match "^\\s-*=\\s-*\\(.+\\)" cell)
+              (let ((formula-length (length cell)))
+                (when (> formula-length (aref column-widths col-index))
+                  (aset column-widths col-index formula-length))))
+            (setq col-index (1+ col-index))))))
+    column-widths))
 
 (defun numerals-process-table-row (row table row-num)
   "Process formulas in a table ROW.
