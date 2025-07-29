@@ -161,7 +161,7 @@ Pads to exact original length for perfect table alignment."
 
 
 (defun numerals-update-buffer ()
-  "Update all calculations in the current buffer using two-pass evaluation."
+  "Update all calculations in the current buffer using 4-pass dependency resolution."
   (when numerals-mode
     (save-excursion
       ;; Clear existing display
@@ -169,19 +169,79 @@ Pads to exact original length for perfect table alignment."
       ;; Clear and rebuild variables
       (numerals-variables-clear)
       
-      ;; Pass 1: Process all tables first
+      ;; Pass 1: Process simple variables (literals and basic expressions only)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (unless (numerals-table-at-point-p)
+          (numerals-process-line-if-simple))
+        (forward-line 1))
+      
+      ;; Pass 2: Process all tables first time (can now use simple variables)
       (goto-char (point-min))
       (while (not (eobp))
         (when (numerals-table-at-point-p)
           (numerals-process-table))
         (forward-line 1))
       
-      ;; Pass 2: Process all non-table lines (variables and calculations)
+      ;; Pass 3: Process complex variables (can reference table cells)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (unless (numerals-table-at-point-p)
+          (numerals-process-line-if-complex))
+        (forward-line 1))
+      
+      ;; Pass 4: Process any remaining variables 
       (goto-char (point-min))
       (while (not (eobp))
         (unless (numerals-table-at-point-p)
           (numerals-process-line))
+        (forward-line 1))
+      
+      ;; Pass 5: Re-process tables that may reference all variables
+      (goto-char (point-min))
+      (while (not (eobp))
+        (when (numerals-table-at-point-p)
+          (numerals-process-table))
         (forward-line 1)))))
+
+(defun numerals-expression-is-simple-p (expression)
+  "Return t if EXPRESSION is simple (no table references and only uses defined variables).
+Simple expressions contain only literals, numbers, operators, and already-defined variables."
+  (and 
+   ;; Must not contain table references
+   (not (string-match-p "\\b[A-Za-z_][A-Za-z0-9_]*\\.[A-Z]+[0-9]+\\b\\|\\b[A-Za-z_][A-Za-z0-9_]*\\.TOTALS\\[" expression))
+   ;; All variable references must already be defined
+   (let ((variables (numerals-parser-extract-variables expression))
+         (defined-vars (mapcar #'car (numerals-variables-get-all)))
+         (all-defined t))
+     (dolist (var variables)
+       (unless (member var defined-vars)
+         (setq all-defined nil)))
+     all-defined)))
+
+(defun numerals-process-line-if-simple ()
+  "Process the current line only if it contains a simple expression."
+  (let* ((line (buffer-substring-no-properties
+                (line-beginning-position)
+                (line-end-position)))
+         (parse-result (numerals-parser-parse-line line))
+         (type (plist-get parse-result :type))
+         (expression (plist-get parse-result :expression)))
+    (when (and expression (numerals-expression-is-simple-p expression))
+      (numerals-process-line))
+    parse-result))
+
+(defun numerals-process-line-if-complex ()
+  "Process the current line only if it contains a complex expression (with table references)."
+  (let* ((line (buffer-substring-no-properties
+                (line-beginning-position)
+                (line-end-position)))
+         (parse-result (numerals-parser-parse-line line))
+         (type (plist-get parse-result :type))
+         (expression (plist-get parse-result :expression)))
+    (when (and expression (not (numerals-expression-is-simple-p expression)))
+      (numerals-process-line))
+    parse-result))
 
 (defun numerals-process-line ()
   "Process the current line for calculations.
