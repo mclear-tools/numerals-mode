@@ -1,4 +1,4 @@
-;;; numerals-table-refs-simple.el --- Simple cross-table references for numerals-mode -*- lexical-binding: t; -*-
+;;; numerals-table-refs.el --- Cross-table references for numerals-mode -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2025
 
@@ -10,7 +10,7 @@
 
 ;;; Commentary:
 
-;; This module provides simple cross-table reference support using org-mode's
+;; This module provides cross-table reference support using org-mode's
 ;; native table lookup mechanisms. Supports TableName.CellRef syntax that
 ;; maps directly to org-mode table cells.
 
@@ -18,7 +18,7 @@
 
 (require 'cl-lib)
 
-;;; Simple Table Reference System
+;;; Table Reference System
 
 (defun numerals-simple-table-refs-substitute (expression)
   "Replace table references in EXPRESSION with their values.
@@ -204,5 +204,5 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
 VARIABLES parameter ignored in this simple implementation."
   (numerals-simple-table-refs-substitute expression))
 
-(provide 'numerals-table-refs-simple)
-;;; numerals-table-refs-simple.el ends here
+(provide 'numerals-table-refs)
+;;; numerals-table-refs.el ends here

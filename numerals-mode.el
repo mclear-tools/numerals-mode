@@ -28,7 +28,7 @@
 
 (require 'numerals-parser)
 (require 'numerals-calc)
-(require 'numerals-table-refs-simple)
+(require 'numerals-table-refs)
 (require 'numerals-variables)
 (require 'numerals-display)
 (require 'numerals-tables)
@@ -352,7 +352,7 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
     (let ((base-dir (file-name-directory (or load-file-name buffer-file-name))))
       (load (expand-file-name "numerals-parser.el" base-dir))
       (load (expand-file-name "numerals-calc.el" base-dir))
-      (load (expand-file-name "numerals-table-refs-simple.el" base-dir))
+      (load (expand-file-name "numerals-table-refs.el" base-dir))
       (load (expand-file-name "numerals-variables.el" base-dir))
       (load (expand-file-name "numerals-display.el" base-dir))
       (load (expand-file-name "numerals-tables.el" base-dir))

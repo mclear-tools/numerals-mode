@@ -24,7 +24,7 @@
   (require 'calc-aent))
 
 ;; Forward declaration to avoid circular dependency
-(declare-function numerals-table-refs-substitute "numerals-table-refs-simple")
+(declare-function numerals-table-refs-substitute "numerals-table-refs")
 
 (defun numerals-calc-substitute-variables (expression variables)
   "Substitute VARIABLES in EXPRESSION with their values.
