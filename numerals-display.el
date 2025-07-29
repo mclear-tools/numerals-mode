@@ -30,8 +30,14 @@
   "Face for displaying calculation errors."
   :group 'numerals)
 
+(defface numerals-variable-face
+  '((t :weight bold))
+  "Face for displaying variable names (bold)."
+  :group 'numerals)
+
 (defvar-local numerals-display-overlays nil
   "List of overlays created by numerals-mode.")
+
 
 (defun numerals-display-result (pos result &optional error-p face-override)
   "Display RESULT at position POS using an overlay.
@@ -54,6 +60,23 @@ FACE-OVERRIDE can specify a specific face to use."
         (push overlay numerals-display-overlays))
     (error
      (message "Display result error at pos %d: %s" pos (error-message-string err)))))
+
+(defun numerals-display-bold-variable-name (pos)
+  "Add bold formatting to the variable name at the beginning of the line containing POS."
+  (save-excursion
+    (goto-char pos)
+    (beginning-of-line)
+    ;; Look for variable assignment pattern: "VarName = ..."
+    (when (looking-at "^\\s-*\\([A-Za-z_][A-Za-z0-9_ ]*\\)\\s-*=")
+      (let* ((var-start (match-beginning 1))
+             (var-end (match-end 1))
+             (var-name (match-string 1))
+             (overlay (make-overlay var-start var-end)))
+        ;; Apply bold face to the variable name
+        (overlay-put overlay 'face 'numerals-variable-face)
+        (overlay-put overlay 'numerals-overlay t)
+        ;; Add to our list for cleanup
+        (push overlay numerals-display-overlays)))))
 
 (defun numerals-display-clear-line (pos)
   "Clear any numerals overlays on the line containing POS."

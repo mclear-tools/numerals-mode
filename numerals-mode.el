@@ -235,13 +235,17 @@ Returns the parse result for the line."
               (numerals-display-result (point) 
                                        (numerals-calc-format-result result)
                                        nil
-                                       (if is-literal nil 'numerals-calculated-face)))
+                                       (if is-literal nil 'numerals-calculated-face))
+              ;; Add bold formatting to the variable name
+              (numerals-display-bold-variable-name (point)))
           (progn
             ;; Even if calculation failed, set the variable to nil so it's defined
             (numerals-variables-set var-name nil expression dependencies)
             (numerals-display-result (point) 
                                      (or error-msg "Error")
-                                     t)))))
+                                     t)
+            ;; Add bold formatting to the variable name even if calculation failed
+            (numerals-display-bold-variable-name (point)))))
      ;; Handle standalone calculation
      ((eq type 'calculation)
       (let* ((expression (plist-get parse-result :expression))
