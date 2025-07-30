@@ -171,16 +171,12 @@ If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
                     (t (nth (- row 1) data))))
          (raw-value (when (and row-data (> col 0) (<= col (length row-data)))
                       (nth (- col 1) row-data))))
-    ;; (message "DEBUG get-cell: row=%d col=%d data-len=%d headers=%s row-data-len=%s" 
-    ;;        row col (length data) (if headers "yes" "no") (if row-data (length row-data) "nil"))
       (if (and evaluate-formulas raw-value 
              (string-match "^[ \t]*=[ \t]*\\(.+\\)" raw-value))
         ;; This is a formula - evaluate it
         (let ((formula (condition-case err
                            (match-string 1 raw-value)
-                         (error 
-                          ;; (message "ERROR in match-string: raw='%s' error='%s'" raw-value (error-message-string err))
-                          nil)))
+                         (error nil)))
               (cell-id (format "%s-%s" row col)))
           (if formula
               (if (member cell-id numerals-table-evaluation-stack)
@@ -193,8 +189,6 @@ If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
                   (error "Error")))
             "Error"))
       ;; Return raw value
-      ;; (when (and (= row 3) (= col 2)) 
-      ;;   (message "DEBUG get-cell B3: eval=%s raw='%s' raw-len=%d" evaluate-formulas raw-value (if raw-value (length raw-value) 0)))
       raw-value)))
 
 (defun numerals-table-get-range-values (table range-spec &optional evaluate-formulas)
@@ -384,9 +378,7 @@ Returns the calculated result as a string."
   (condition-case err
       (let ((expanded (condition-case expand-err
                           (numerals-table-expand-references formula table current-row current-col)
-                        (error 
-                         ;; (message "ERROR in expand-references: formula='%s' error='%s'" formula (error-message-string expand-err))
-                         formula))))
+                        (error formula))))
         ;; Use calc directly since we've already expanded all references
         (let ((calc-result (condition-case nil (calc-eval expanded) (error "Error"))))
           (let ((result (list :value (if (stringp calc-result) calc-result (format "%s" calc-result)) :error nil)))
@@ -394,7 +386,6 @@ Returns the calculated result as a string."
                 (format "Error: %s" (plist-get result :error))
               (numerals-calc-format-result (plist-get result :value))))))
     (error 
-     ;; (message "DEBUG process-formula ERROR: formula='%s' error='%s'" formula (error-message-string err))
      (format "Error: %s" (error-message-string err)))))
 
 (defun numerals-table-expand-references (formula table &optional current-row current-col)

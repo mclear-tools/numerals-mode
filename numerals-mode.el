@@ -161,8 +161,6 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
                              result)))
          (overlay (numerals-display--get-overlay start end))
          (text (propertize formatted-result 'face 'numerals-calculated-face)))
-    ;; (message "DEBUG DISPLAY: Original='%s' (len=%d) -> Formatted='%s' (len=%d) Result='%s'" 
-    ;;         original-cell-content original-length formatted-result (length formatted-result) result)
     ;; Configure the overlay to replace the text
     (overlay-put overlay 'display text)
     (overlay-put overlay 'numerals-overlay t)
@@ -384,8 +382,6 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
           ;; Search for the formula text at the specific row/column position
           (save-excursion
             (let ((found-position (numerals-find-formula-at-position table row-num col-num formula-text)))
-              ;; (message "DEBUG position: Formula '%s' -> result '%s', position %s" 
-              ;;        formula-text result found-position)
               (when found-position
                 (numerals-display-table-result (car found-position) (cdr found-position) result))
 )))))))
