@@ -294,6 +294,88 @@ VALUES is a list of strings that may contain numbers."
   'numerals-utils-extract-numbers
   "Extract numeric values from a list of string VALUES.")
 
+;;; Formula Processing Helper Functions
+
+(defun numerals-table--expand-sum-functions (formula table)
+  "Expand SUM function calls in FORMULA using TABLE data.
+Returns formula with SUM calls replaced by calculated values."
+  (let ((result formula))
+    (when (string-match "SUM\\s-*(\\s-*\\([^)]+\\)\\s-*)" result)
+      (let* ((range-str (match-string 1 result))
+             (start (match-beginning 0))
+             (end (match-end 0)))
+        (condition-case nil
+            (let* ((range (numerals-table-parse-range range-str))
+                   (values (when range 
+                             (numerals-table-get-range-values-for-sum table range)))
+                   (sum-result (if values
+                                   (number-to-string (numerals-table-sum values))
+                                 numerals-utils-error-zero)))
+              (setq result (concat (substring result 0 start)
+                                   sum-result
+                                   (substring result end))))
+          (error 
+           (setq result (concat (substring result 0 start)
+                                numerals-utils-error-zero
+                                (substring result end)))))))
+    result))
+
+(defun numerals-table--expand-cell-reference (ref table)
+  "Expand single cell reference REF using TABLE data.
+Returns the cell value or error value if not found."
+  (condition-case nil
+      (let ((cell (numerals-table-parse-reference ref)))
+        (if cell
+            (let* ((row (plist-get cell :row))
+                   (col (plist-get cell :col))
+                   (value (numerals-table-get-cell table row col nil)))
+              (if (and value (not (string-match "^[ \t]*=" value)))
+                  ;; Literal value - use directly
+                  (string-trim value)
+                ;; Formula - evaluate with recursion protection
+                (let ((ref-key (format "%d-%d" row col)))
+                  (if (member ref-key numerals-table-expansion-stack)
+                      numerals-utils-error-zero
+                    (condition-case nil
+                        (let ((numerals-table-expansion-stack 
+                               (cons ref-key numerals-table-expansion-stack))
+                              (eval-value (numerals-table-get-cell table row col t)))
+                          (if eval-value 
+                              (string-trim eval-value) 
+                            numerals-utils-error-zero))
+                      (error numerals-utils-error-zero))))))
+          numerals-utils-error-zero))
+    (error numerals-utils-error-zero)))
+
+(defun numerals-table--expand-cell-references (formula table)
+  "Expand all cell references in FORMULA using TABLE data.
+Returns formula with cell references replaced by their values."
+  (replace-regexp-in-string
+   "\\b\\([A-Z]+[0-9]+\\)\\b"
+   (lambda (match)
+     (numerals-table--expand-cell-reference (match-string 1 match) table))
+   formula t))
+
+(defun numerals-table--expand-variable-references (formula)
+  "Expand variable references in FORMULA.
+Returns formula with variables replaced by their values."
+  (let ((result formula)
+        (variables (condition-case nil 
+                       (numerals-variables-get-all) 
+                     (error '()))))
+    (dolist (var variables)
+      (let ((var-name (car var))
+            (var-value (cdr var)))
+        ;; Only replace if it's not a cell reference pattern
+        (unless (string-match-p "^[A-Z]+[0-9]+$" var-name)
+          (setq result (replace-regexp-in-string
+                        (concat "\\b" (regexp-quote var-name) "\\b")
+                        (if (numberp var-value)
+                            (number-to-string var-value)
+                          (format "%s" var-value))
+                        result t t)))))
+    result))
+
 ;;; Formula Processing
 
 (defun numerals-table-process-formula (formula table current-row current-col)
@@ -319,78 +401,14 @@ Returns the calculated result as a string."
   "Expand all table references in FORMULA using TABLE data.
 Replaces cell references with their values and function calls with results."
   (let ((result formula))
-    ;; First replace function calls like SUM(A1:B2) manually
-    (when (string-match "SUM\\s-*(\\s-*\\([^)]+\\)\\s-*)" result)
-      (let* ((full-match (match-string 0 result))
-             (range-str (match-string 1 result))
-             (start (match-beginning 0))
-             (end (match-end 0)))
-        (condition-case err
-            (let* ((range (numerals-table-parse-range range-str))
-                   (values (when range (numerals-table-get-range-values-for-sum table range))))
-              (if values
-                  (let ((sum-result (number-to-string (numerals-table-sum values))))
-                    (setq result (concat (substring result 0 start)
-                                        sum-result
-                                        (substring result end))))
-                (setq result (concat (substring result 0 start)
-                                    "0"
-                                    (substring result end)))))
-          (error (setq result (concat (substring result 0 start)
-                                     "0"
-                                     (substring result end)))))))
+    ;; Step 1: Expand SUM function calls
+    (setq result (numerals-table--expand-sum-functions result table))
     
-    ;; Replace any remaining cell references (after function processing)
-    (setq result (replace-regexp-in-string
-                  "\\b\\([A-Z]+[0-9]+\\)\\b"
-                  (lambda (match)
-                    (let ((ref (match-string 1 match)))
-                      (condition-case err
-                          (let ((cell (numerals-table-parse-reference ref)))
-                            (if cell
-                                (let* ((row (plist-get cell :row))
-                                       (col (plist-get cell :col))
-                                       (value (numerals-table-get-cell table row col nil))) ; get raw value first
-                                  ;; Debug: add a message to see what we're getting
-                                  ;; (message "DEBUG expand-ref: %s -> row=%d col=%d value='%s'" ref row col value)
-                                  (let ((replacement 
-                                         (if (and value (not (string-match "^[ \t]*=" value)))
-                                             ;; It's a literal value - use it directly
-                                             (string-trim value)
-                                           ;; It's a formula - try to evaluate it with recursion protection
-                                           (let ((ref-key (format "%d-%d" row col)))
-                                             (if (member ref-key numerals-table-expansion-stack)
-                                                 ;; Avoid infinite recursion
-                                                 "0"
-                                               (condition-case nil
-                                                   (let ((numerals-table-expansion-stack 
-                                                          (cons ref-key numerals-table-expansion-stack)))
-                                                     ;; Try to get the evaluated result
-                                                     (let ((eval-value (numerals-table-get-cell table row col t)))
-                                                       ;; (when (string-match-p "^[BD][34]$" ref)
-                                                       ;;   (message "DEBUG eval-chain: %s raw='%s' eval='%s'" ref value eval-value))
-                                                       (if eval-value (string-trim eval-value) "0")))
-                                                 (error "0")))))))
-                                    ;; (when (string-match-p "^[BD][34]$" ref)
-                                    ;;   (message "DEBUG expand-ref: %s replaced with '%s'" ref replacement))
-                                    replacement))
-                              "0"))
-                        (error "0"))))
-                  result t))
+    ;; Step 2: Expand cell references
+    (setq result (numerals-table--expand-cell-references result table))
     
-    ;; Replace variable references with their values (for variables that aren't cell references)
-    (let ((variables (condition-case nil (numerals-variables-get-all) (error '()))))
-      (dolist (var variables)
-        (let ((var-name (car var))
-              (var-value (cdr var)))
-          ;; Only replace if it's not a cell reference pattern
-          (unless (string-match-p "^[A-Z]+[0-9]+$" var-name)
-            (setq result (replace-regexp-in-string
-                         (concat "\\b" (regexp-quote var-name) "\\b")
-                         (if (numberp var-value)
-                             (number-to-string var-value)
-                           (format "%s" var-value))
-                         result t t))))))
+    ;; Step 3: Expand variable references
+    (setq result (numerals-table--expand-variable-references result))
     
     result))
 
