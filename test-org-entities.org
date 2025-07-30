@@ -1,0 +1,25 @@
+#+TITLE: Test Org Pretty Entities
+
+* Test Entities
+
+This file tests the toggling of org-pretty-entities when numerals-mode is enabled.
+
+Some entities to test:
+- Alpha: \alpha
+- Beta: \beta  
+- Sum: \sum
+- Integral: \int
+
+* Test Calculations
+
+Monthly Rent = 2350.00
+Utilities = 150.00  
+Total = Monthly Rent + Utilities
+
+* Test Table
+
+| Item     | Cost    | Tax     | Total   |
+|----------|---------|---------|---------|
+| Widget   | 100.00  | =B2*0.08| =B2+C2  |
+| Gadget   | 250.00  | =B3*0.08| =B3+C3  |
+| TOTALS   | =SUM(B2:B3) | =SUM(C2:C3) | =SUM(D2:D3) |

@@ -517,5 +517,25 @@ Returns a cons (START . END) of the formula position, or nil if not found."
           (numerals-mode 1))))
     (message "Numerals-mode reloaded in %d buffer(s)" (length enabled-buffers))))
 
+;;; Org-mode auto-activation support
+
+(defun numerals-check-org-keywords ()
+  "Check for numerals-mode keywords in org buffer.
+Returns t if numerals-mode should be activated."
+  (save-excursion
+    (goto-char (point-min))
+    (or (re-search-forward "^#\\+STARTUP:.*\\bnumerals\\b" nil t)
+        (re-search-forward "^#\\+PROPERTY: numerals-mode t" nil t))))
+
+(defun numerals-setup-org-mode ()
+  "Setup numerals-mode for org files if keywords present.
+This function is intended to be added to `org-mode-hook'."
+  (when (and (derived-mode-p 'org-mode)
+             (numerals-check-org-keywords))
+    (numerals-mode 1)))
+
+;; Add to org-mode-hook for auto-activation
+(add-hook 'org-mode-hook #'numerals-setup-org-mode)
+
 (provide 'numerals-mode)
 ;;; numerals-mode.el ends here
