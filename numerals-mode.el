@@ -101,7 +101,7 @@ Key bindings:
   "Saved value of org-pretty-entities.")
 
 (defun numerals-disable-org-table-calculations ()
-  "Disable org-mode's built-in table calculations."
+  "Disable org-mode's built-in table calculations and org-pretty-entities."
   (when (featurep 'org-table)
     ;; Save current values
     (setq numerals-org-table-auto-blank-field org-table-auto-blank-field)
@@ -116,7 +116,11 @@ Key bindings:
     (when (fboundp 'org-table-recalculate)
       (advice-add 'org-table-recalculate :around #'numerals-suppress-org-table-recalc))
     (when (fboundp 'org-table-calc-current-TBLFM)
-      (advice-add 'org-table-calc-current-TBLFM :around #'numerals-suppress-org-table-recalc))))
+      (advice-add 'org-table-calc-current-TBLFM :around #'numerals-suppress-org-table-recalc)))
+  ;; Save and disable org-pretty-entities
+  (when (boundp 'org-pretty-entities)
+    (setq numerals-org-pretty-entities org-pretty-entities)
+    (setq-local org-pretty-entities nil)))
 
 (defun numerals-enable-org-table-calculations ()
   "Re-enable org-mode's built-in table calculations."
