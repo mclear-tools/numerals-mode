@@ -97,6 +97,9 @@ Key bindings:
 (defvar-local numerals-org-table-formula-evaluate-inline nil
   "Saved value of org-table-formula-evaluate-inline.")
 
+(defvar-local numerals-org-pretty-entities nil
+  "Saved value of org-pretty-entities.")
+
 (defun numerals-disable-org-table-calculations ()
   "Disable org-mode's built-in table calculations."
   (when (featurep 'org-table)
