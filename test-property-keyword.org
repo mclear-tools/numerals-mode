@@ -1,0 +1,21 @@
+#+TITLE: Test PROPERTY Keyword
+#+PROPERTY: numerals-mode t
+
+* Description
+This file should automatically activate numerals-mode when opened due to the #+PROPERTY: numerals-mode t keyword.
+
+* Investment Portfolio
+
+Initial Investment = 10000
+Annual Return = 0.08
+Years = 5
+Final Value = Initial Investment * (1 + Annual Return)^Years
+
+* Asset Allocation
+
+| Asset Type  | Amount   | Percentage |
+|-------------|----------|------------|
+| Stocks      | 6000     | =B2/B5     |
+| Bonds       | 3000     | =B3/B5     |
+| Cash        | 1000     | =B4/B5     |
+| TOTAL       | =SUM(B2:B4) |         |

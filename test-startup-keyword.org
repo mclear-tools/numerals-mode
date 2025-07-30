@@ -1,0 +1,20 @@
+#+TITLE: Test STARTUP Keyword
+#+STARTUP: numerals
+
+* Description
+This file should automatically activate numerals-mode when opened due to the #+STARTUP: numerals keyword.
+
+* Test Calculations
+
+Base Salary = 75000
+Tax Rate = 0.22
+After Tax = Base Salary * (1 - Tax Rate)
+
+* Monthly Budget
+
+| Category    | Amount  | Percent |
+|-------------|---------|---------|
+| Housing     | 2000    | =B2/B5  |
+| Food        | 600     | =B3/B5  |
+| Transport   | 400     | =B4/B5  |
+| TOTAL       | =SUM(B2:B4) |     |

@@ -1,0 +1,23 @@
+# -*- mode: org; eval: (numerals-mode 1) -*-
+#+TITLE: Test File-Local Variables
+
+* Description
+This file should activate numerals-mode through file-local variables in the first line.
+
+* Expense Report
+
+Q1 Expenses = 15000
+Q2 Expenses = 18000
+Q3 Expenses = 16500
+Q4 Expenses = 19500
+Total Annual = Q1 Expenses + Q2 Expenses + Q3 Expenses + Q4 Expenses
+Average Quarterly = Total Annual / 4
+
+* Department Budget
+
+| Department  | Budget   | Actual   | Variance |
+|-------------|----------|----------|----------|
+| Engineering | 100000   | 95000    | =B2-C2   |
+| Marketing   | 50000    | 52000    | =B3-C3   |
+| Operations  | 75000    | 73500    | =B4-C4   |
+| TOTALS      | =SUM(B2:B4) | =SUM(C2:C4) | =SUM(D2:D4) |
