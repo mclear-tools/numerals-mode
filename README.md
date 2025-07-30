@@ -29,6 +29,17 @@ Enable numerals-mode in any buffer:
 M-x numerals-mode
 ```
 
+### Org-Mode Integration
+
+Numerals mode integrates seamlessly with org-mode files. You can automatically activate numerals-mode in org files using:
+
+1. **Org Keywords**: Add `#+STARTUP: numerals` or `#+PROPERTY: numerals-mode t` to your org file
+2. **File-Local Variables**: Add `# -*- eval: (numerals-mode 1) -*-` to the first line
+
+When numerals-mode is active in an org-mode buffer:
+- `org-pretty-entities` is automatically disabled to prevent conflicts
+- Original settings are restored when numerals-mode is disabled
+
 ## Commands
 
 When numerals-mode is active, the following commands are available:
@@ -63,7 +74,6 @@ Numerals mode supports calculations in both markdown and org-mode tables:
 | Orange  | 3.00  | 5        | =B3*C3      |
 | Total   |       |          | =SUM(D2:D3) |
 ```
-ii
 
 Supported functions: `SUM`, `AVERAGE`, `COUNT`, `MAX`, `MIN`
 
