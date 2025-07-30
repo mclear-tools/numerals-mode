@@ -51,9 +51,10 @@
 Reuses from pool if available, otherwise creates new."
   (let ((overlay (pop numerals-display-overlay-pool)))
     (if overlay
-        (move-overlay overlay start end (current-buffer))
-      (make-overlay start end))
-    overlay))
+        (progn
+          (move-overlay overlay start end (current-buffer))
+          overlay)
+      (make-overlay start end))))
 
 (defun numerals-display--return-overlay (overlay)
   "Return OVERLAY to the pool for reuse.
