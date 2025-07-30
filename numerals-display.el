@@ -38,6 +38,42 @@
 (defvar-local numerals-display-overlays nil
   "List of overlays created by numerals-mode.")
 
+(defvar-local numerals-display-overlay-pool nil
+  "Pool of unused overlays available for reuse.")
+
+(defconst numerals-display-max-pool-size 50
+  "Maximum number of overlays to keep in the pool.")
+
+;;; Overlay Pool Management
+
+(defun numerals-display--get-overlay (start end)
+  "Get an overlay for the region from START to END.
+Reuses from pool if available, otherwise creates new."
+  (let ((overlay (pop numerals-display-overlay-pool)))
+    (if overlay
+        (move-overlay overlay start end (current-buffer))
+      (make-overlay start end))
+    overlay))
+
+(defun numerals-display--return-overlay (overlay)
+  "Return OVERLAY to the pool for reuse.
+Clears overlay properties and adds to pool if under size limit."
+  (when (overlay-buffer overlay)
+    ;; Clear all properties
+    (overlay-put overlay 'after-string nil)
+    (overlay-put overlay 'display nil)
+    (overlay-put overlay 'face nil)
+    (overlay-put overlay 'numerals-overlay nil)
+    ;; Remove from buffer
+    (delete-overlay overlay)
+    ;; Add to pool if under limit
+    (when (< (length numerals-display-overlay-pool) numerals-display-max-pool-size)
+      (push overlay numerals-display-overlay-pool))))
+
+(defun numerals-display--clear-overlay-pool ()
+  "Clear the overlay pool completely."
+  (setq numerals-display-overlay-pool nil))
+
 
 (defun numerals-display-result (pos result &optional error-p face-override)
   "Display RESULT at position POS using an overlay.
@@ -47,7 +83,7 @@ FACE-OVERRIDE can specify a specific face to use."
       (let* ((line-end (save-excursion
                          (goto-char pos)
                          (line-end-position)))
-             (overlay (make-overlay line-end line-end))
+             (overlay (numerals-display--get-overlay line-end line-end))
              (face (cond (error-p 'numerals-error-face)
                          (face-override face-override)
                          (t 'numerals-result-face)))
@@ -71,7 +107,7 @@ FACE-OVERRIDE can specify a specific face to use."
       (let* ((var-start (match-beginning 1))
              (var-end (match-end 1))
              (var-name (match-string 1))
-             (overlay (make-overlay var-start var-end)))
+             (overlay (numerals-display--get-overlay var-start var-end)))
         ;; Apply bold face to the variable name
         (overlay-put overlay 'face 'numerals-variable-face)
         (overlay-put overlay 'numerals-overlay t)
@@ -90,9 +126,9 @@ FACE-OVERRIDE can specify a specific face to use."
                                                (goto-char pos)
                                                (line-end-position))))
         (push overlay overlays-to-remove)))
-    ;; Remove the overlays
+    ;; Remove the overlays using pool
     (dolist (overlay overlays-to-remove)
-      (delete-overlay overlay)
+      (numerals-display--return-overlay overlay)
       (setq numerals-display-overlays
             (delq overlay numerals-display-overlays)))))
 
@@ -100,7 +136,7 @@ FACE-OVERRIDE can specify a specific face to use."
   "Clear all numerals overlays in the current buffer."
   (dolist (overlay numerals-display-overlays)
     (when (overlay-buffer overlay)
-      (delete-overlay overlay)))
+      (numerals-display--return-overlay overlay)))
   (setq numerals-display-overlays nil))
 
 

@@ -159,7 +159,7 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
                             (t
                              ;; Exact same length
                              result)))
-         (overlay (make-overlay start end))
+         (overlay (numerals-display--get-overlay start end))
          (text (propertize formatted-result 'face 'numerals-calculated-face)))
     ;; (message "DEBUG DISPLAY: Original='%s' (len=%d) -> Formatted='%s' (len=%d) Result='%s'" 
     ;;         original-cell-content original-length formatted-result (length formatted-result) result)
@@ -267,7 +267,7 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
         (end (cdr (plist-get table :bounds))))
     (dolist (overlay (overlays-in start end))
       (when (overlay-get overlay 'numerals-overlay)
-        (delete-overlay overlay)
+        (numerals-display--return-overlay overlay)
         (setq numerals-display-overlays
               (delq overlay numerals-display-overlays))))))
 
