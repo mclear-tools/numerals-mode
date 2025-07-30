@@ -123,7 +123,7 @@ Key bindings:
     (setq-local org-pretty-entities nil)))
 
 (defun numerals-enable-org-table-calculations ()
-  "Re-enable org-mode's built-in table calculations."
+  "Re-enable org-mode's built-in table calculations and restore org-pretty-entities."
   (when (featurep 'org-table)
     ;; Restore saved values
     (setq-local org-table-auto-blank-field numerals-org-table-auto-blank-field)
@@ -135,7 +135,10 @@ Key bindings:
     (when (fboundp 'org-table-recalculate)
       (advice-remove 'org-table-recalculate #'numerals-suppress-org-table-recalc))
     (when (fboundp 'org-table-calc-current-TBLFM)
-      (advice-remove 'org-table-calc-current-TBLFM #'numerals-suppress-org-table-recalc))))
+      (advice-remove 'org-table-calc-current-TBLFM #'numerals-suppress-org-table-recalc)))
+  ;; Restore org-pretty-entities
+  (when (boundp 'org-pretty-entities)
+    (setq-local org-pretty-entities numerals-org-pretty-entities)))
 
 (defun numerals-suppress-org-table-recalc (orig-fun &rest args)
   "Suppress org-table recalculation when numerals-mode is active."
