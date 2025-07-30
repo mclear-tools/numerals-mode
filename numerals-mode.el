@@ -135,22 +135,33 @@ Key bindings:
     (apply orig-fun args)))
 
 (defun numerals-display-table-result (start end result)
-  "Display RESULT as an overlay replacing text from START to END.
-Pads to exact original length for perfect table alignment."
-  (let* ((original-text (buffer-substring start end))
-         (original-length (length original-text))
+  "Display RESULT as an overlay replacing entire cell content from START to END.
+CRITICAL: Maintains exact character count for perfect pipe alignment."
+  (let* ((original-cell-content (buffer-substring start end))
+         (original-length (length original-cell-content))
          (result-length (length result))
-         ;; Always pad to exact original length for perfect alignment
-         (padded-result (if (< result-length original-length)
-                           (let ((padding-needed (- original-length result-length)))
-                             ;; Right-align numbers, left-align everything else
-                             (if (string-match-p "^[0-9.-]+$" result)
-                                 (concat (make-string padding-needed ?\s) result)
-                               (concat result (make-string padding-needed ?\s))))
-                         ;; If result is longer, truncate to fit
-                         (substring result 0 original-length)))
+         (is-numeric (string-match-p "^[0-9.-]+$" result))
+         ;; Create replacement with EXACTLY the same character count as original cell
+         (formatted-result (cond
+                            ((< result-length original-length)
+                             (let ((padding-needed (- original-length result-length)))
+                               (if is-numeric
+                                   ;; Right-align numbers with small right margin like non-overlay numbers
+                                   (if (>= padding-needed 1)
+                                       (concat (make-string (1- padding-needed) ?\s) result " ")
+                                     (concat (make-string padding-needed ?\s) result))
+                                 ;; Left-align text with all padding on right
+                                 (concat result (make-string padding-needed ?\s)))))
+                            ((> result-length original-length)
+                             ;; If result is longer than cell, truncate
+                             (substring result 0 original-length))
+                            (t
+                             ;; Exact same length
+                             result)))
          (overlay (make-overlay start end))
-         (text (propertize padded-result 'face 'numerals-calculated-face)))
+         (text (propertize formatted-result 'face 'numerals-calculated-face)))
+    ;; (message "DEBUG DISPLAY: Original='%s' (len=%d) -> Formatted='%s' (len=%d) Result='%s'" 
+    ;;         original-cell-content original-length formatted-result (length formatted-result) result)
     ;; Configure the overlay to replace the text
     (overlay-put overlay 'display text)
     (overlay-put overlay 'numerals-overlay t)
@@ -399,38 +410,35 @@ Returns a cons (START . END) of the formula position, or nil if not found."
         
         ;; Now we're at the target row - search for formula-text in this line only
         (when (= current-row row-num)
-          ;; (message "DEBUG: Found target row %d at position %d" current-row (point))
           (let ((line-start (point))  
                 (line-end (line-end-position))
                 (col-count 0)
                 (found-pos nil))
             ;; Parse cells in this row to find the target column
             (when (looking-at "^[ \t]*|\\(.*\\)|[ \t]*$")
-              (let ((content (match-string 1))
-                    (search-pos (1+ line-start))) ; Start after first |
-                ;; (message "DEBUG: Row content: '%s'" content)
-                ;; Split content by | and search for our target column
-                (dolist (cell (split-string content "|" t))
+              (let* ((content (match-string 1))
+                     (remaining-content content)
+                     (current-pos (1+ line-start))) ; Start after first |
+                ;; Use direct parsing for accurate cell boundary detection
+                (while (and remaining-content 
+                           (> (length remaining-content) 0)
+                           (string-match "^\\([^|]*\\)" remaining-content))
                   (setq col-count (1+ col-count))
-                  (let* ((trimmed-cell (string-trim cell))
-                         (cell-start search-pos)
-                         (cell-end (+ search-pos (length cell))))
-                    ;; (message "DEBUG: Col %d: cell='%s', trimmed='%s', target='%s'" 
-                    ;;        col-count cell trimmed-cell formula-text)
+                  (let* ((cell (match-string 1 remaining-content))
+                         (trimmed-cell (string-trim cell))
+                         (cell-start current-pos)
+                         (cell-end (+ current-pos (length cell))))
                     (when (and (= col-count col-num) (string= trimmed-cell formula-text))
-                      ;; Found our target cell with matching content
-                      ;; (message "DEBUG: MATCH found at col %d!" col-count)
-                      ;; Find the start position of the trimmed content within the cell
-                      (let* ((leading-whitespace (- (length cell) (length (string-trim-left cell))))
-                             (trimmed-start (+ cell-start leading-whitespace))
-                             ;; Use the full cell width to accommodate longer results
-                             (cell-end-pos (+ cell-start (length cell)))
-                             (trimmed-end cell-end-pos))
-                        ;; (message "DEBUG: Position calc: cell='%s' formula='%s' cell-start=%d trimmed-end=%d" 
-                        ;;        cell formula-text cell-start trimmed-end)
-                        (setq found-pos (cons trimmed-start trimmed-end))))
-                    (setq search-pos (1+ cell-end))))))
-            found-pos))))))
+                      ;; Found our target cell - replace the entire cell content
+                      (setq found-pos (cons cell-start cell-end)))
+                    ;; Move to next cell: past this cell + "|" separator  
+                    (setq current-pos (+ cell-end 1))
+                    (setq remaining-content 
+                          (if (>= (+ (length cell) 1) (length remaining-content))
+                              nil
+                            (substring remaining-content (+ (length cell) 1)))))))
+            found-pos)))))))
+
 
 (defun numerals-recalculate ()
   "Manually trigger recalculation of all expressions."
