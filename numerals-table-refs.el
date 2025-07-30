@@ -17,6 +17,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'numerals-utils)
 
 ;;; Table Reference System
 
@@ -196,12 +197,10 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
      (message "Cell overlay error: %s" (error-message-string err))
      nil)))
 
-(defun numerals-simple-column-to-number (col-letters)
-  "Convert column letters (A, B, AA, etc.) to column number."
-  (let ((result 0))
-    (dolist (char (string-to-list (upcase col-letters)))
-      (setq result (+ (* result 26) (- char ?A) 1)))
-    result))
+;; Use centralized utility function
+(defalias 'numerals-simple-column-to-number
+  'numerals-utils-column-letter-to-number
+  "Convert column letters (A, B, AA, etc.) to column number.")
 
 ;; Integration function
 (defun numerals-table-refs-substitute (expression variables)

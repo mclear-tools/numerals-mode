@@ -18,6 +18,7 @@
 
 (require 'cl-lib)
 (require 'numerals-calc)
+(require 'numerals-utils)
 
 ;;; Table Detection
 
@@ -123,12 +124,10 @@ Returns a plist with :row and :col (1-indexed), or nil if invalid."
           :col (string-to-number (match-string 2 ref))))
    (t nil)))
 
-(defun numerals-table-column-letter-to-number (letters)
-  "Convert column LETTERS (e.g., \"A\", \"AB\") to column number."
-  (let ((result 0))
-    (dolist (char (string-to-list letters))
-      (setq result (+ (* result 26) (- char ?A) 1)))
-    result))
+;; Use centralized utility function
+(defalias 'numerals-table-column-letter-to-number
+  'numerals-utils-column-letter-to-number
+  "Convert column LETTERS (e.g., \"A\", \"AB\") to column number.")
 
 (defun numerals-table-parse-range (range)
   "Parse a range reference like A1:B3 or @1$1..@2$3.
@@ -290,14 +289,10 @@ VALUES is a list of strings that may contain numbers."
 (defvar-local numerals-table-expansion-stack nil
   "Stack to track cells currently being expanded to prevent recursion.")
 
-(defun numerals-table-extract-numbers (values)
-  "Extract numeric values from a list of string VALUES.
-Returns a list of numbers, skipping non-numeric values."
-  (delq nil
-        (mapcar (lambda (v)
-                  (when (string-match "^[ \t]*\\(-?[0-9]+\\.?[0-9]*\\)" v)
-                    (string-to-number (match-string 1 v))))
-                values)))
+;; Use centralized utility function
+(defalias 'numerals-table-extract-numbers
+  'numerals-utils-extract-numbers
+  "Extract numeric values from a list of string VALUES.")
 
 ;;; Formula Processing
 

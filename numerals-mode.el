@@ -32,6 +32,7 @@
 (require 'numerals-variables)
 (require 'numerals-display)
 (require 'numerals-tables)
+(require 'numerals-utils)
 
 (defgroup numerals nil
   "Literate calculation mode."
