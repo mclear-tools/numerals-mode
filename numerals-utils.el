@@ -58,7 +58,8 @@ Accepts formats like \"123\", \"1,234\", \"1,234.56\", \"-1,000\"."
         ;; Original pattern for numbers without commas
         (string-match-p "^[ \t]*-?[0-9]+\\.?[0-9]*[ \t]*$" str)
         ;; New pattern for numbers with commas (properly escaped)
-        (string-match-p "^[ \t]*-?[0-9]\\{1,3\\}\\(,[0-9]\\{3\\}\\)*\\(\\.?[0-9]*\\)?[ \t]*$" str))))
+        ;; Must have exactly 3 digits after each comma, and decimal part (if any) must be valid
+        (string-match-p "^[ \t]*-?[0-9]\\{1,3\\}\\(,[0-9]\\{3\\}\\)*\\(\\.[0-9]+\\)?[ \t]*$" str))))
 
 ;;; Error Handling Utilities
 
