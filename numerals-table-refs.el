@@ -34,7 +34,7 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                         (let* ((table-name (match-string 1 match))
                                (col-num (string-to-number (match-string 2 match)))
                                (value (numerals-simple-get-totals-value table-name col-num)))
-                          (if (and value (stringp value) (string-match-p "^[0-9.-]+$" value))
+                          (if (and value (stringp value) (numerals-utils-is-numeric-string-p value))
                               value
                             match)))
                       (error
@@ -52,7 +52,7 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                         (let* ((table-name (match-string 1 match))
                                (cell-ref (match-string 2 match))
                                (value (numerals-simple-get-cell-value table-name cell-ref)))
-                          (if (and value (stringp value) (string-match-p "^[0-9.-]+$" value))
+                          (if (and value (stringp value) (numerals-utils-is-numeric-string-p value))
                               value
                             match)))))
                   result))
@@ -100,7 +100,7 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                   (let ((display-text (overlay-get overlay 'display)))
                     (when (and display-text 
                                (stringp display-text)
-                               (string-match-p "^[ \t]*[0-9.-]+[ \t]*$" display-text))
+                               (numerals-utils-is-numeric-string-p display-text))
                       (push (cons (overlay-start overlay) (string-trim display-text)) 
                             overlays-found)))))
               ;; Sort by position and return the requested column
@@ -187,7 +187,7 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                       (or found-value
                           (let ((literal-text (string-trim cell-text)))
                             ;; Only return if it looks like a number
-                            (when (string-match-p "^[0-9.-]+$" literal-text)
+                            (when (numerals-utils-is-numeric-string-p literal-text)
                               literal-text))))
                   (progn
                     (message "Invalid cell bounds - start=%d end=%d buffer-size=%d" 

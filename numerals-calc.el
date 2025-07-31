@@ -30,6 +30,7 @@
   "Substitute VARIABLES in EXPRESSION with their values.
 VARIABLES is an alist of (name . value) pairs.
 Returns the expression with variables replaced by their values."
+  (require 'numerals-utils)
   (if (null variables)
       expression
     (let ((result expression)
@@ -43,10 +44,20 @@ Returns the expression with variables replaced by their values."
               (value (cdr var)))
           ;; Skip variables with nil values to avoid substituting "nil" as text
           (when value
-            (setq result (replace-regexp-in-string
-                         (concat "\\<" (regexp-quote name) "\\>")
-                         (format "%s" value)
-                         result)))))
+            ;; Strip commas from the value before substitution
+            (let ((clean-value (if (stringp value)
+                                   (numerals-utils-strip-commas value)
+                                 (format "%s" value))))
+              (setq result (replace-regexp-in-string
+                           (concat "\\<" (regexp-quote name) "\\>")
+                           clean-value
+                           result))))))
+      ;; Also strip commas from any numeric literals in the expression
+      (setq result (replace-regexp-in-string
+                    "\\b\\([0-9]\\{1,3\\}\\(?:,[0-9]\\{3\\}\\)*\\(?:\\.[0-9]+\\)?\\)\\b"
+                    (lambda (match)
+                      (numerals-utils-strip-commas match))
+                    result))
       result)))
 
 
@@ -138,6 +149,7 @@ Returns a plist with :value (the result) and :error (error message if any)."
 (defun numerals-calc-format-result (result)
   "Format the calculation RESULT for display.
 Handles number formatting and error display."
+  (require 'numerals-utils)
   (cond
    ((null result) "Error")
    ((string-match-p "\\." result)
@@ -145,15 +157,19 @@ Handles number formatting and error display."
     (let* ((num (string-to-number result))
            (formatted (format "%.4f" num)))
       ;; Remove trailing zeros after decimal point
-      (cond
-       ;; If it ends with .0000, just remove the decimal point
-       ((string-match "\\.0+$" formatted)
-        (replace-match "" nil nil formatted))
-       ;; If it has trailing zeros after other digits, remove them
-       ((string-match "\\(\\.[0-9]*?[1-9]\\)0+$" formatted)
-        (replace-match "\\1" nil nil formatted))
-       (t formatted))))
-   (t result)))
+      (let ((cleaned
+             (cond
+              ;; If it ends with .0000, just remove the decimal point
+              ((string-match "\\.0+$" formatted)
+               (replace-match "" nil nil formatted))
+              ;; If it has trailing zeros after other digits, remove them
+              ((string-match "\\(\\.[0-9]*?[1-9]\\)0+$" formatted)
+               (replace-match "\\1" nil nil formatted))
+              (t formatted))))
+        ;; Add comma formatting
+        (numerals-utils-format-number-with-commas cleaned))))
+   ;; Integer result - add comma formatting
+   (t (numerals-utils-format-number-with-commas result))))
 
 
 (provide 'numerals-calc)

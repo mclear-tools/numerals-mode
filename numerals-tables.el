@@ -225,7 +225,7 @@ Handles formulas like =B2*0.03 but avoids nested SUM calls to prevent recursion.
                                                      ;; Skip nested function calls to avoid recursion, but try basic evaluation
                                                      (condition-case nil
                                                        (let ((simple-result (numerals-table-process-formula formula table row col)))
-                                                         (if (string-match-p "^[0-9.-]+$" simple-result)
+                                                         (if (numerals-utils-is-numeric-string-p simple-result)
                                                              simple-result
                                                            "0"))
                                                        (error "0"))

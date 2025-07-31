@@ -151,7 +151,7 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
   (let* ((original-cell-content (buffer-substring start end))
          (original-length (length original-cell-content))
          (result-length (length result))
-         (is-numeric (string-match-p "^[0-9.-]+$" result))
+         (is-numeric (numerals-utils-is-numeric-string-p result))
          ;; Create replacement with EXACTLY the same character count as original cell
          (formatted-result (cond
                             ((< result-length original-length)
@@ -299,7 +299,7 @@ Returns the parse result for the line."
                  (error-msg (plist-get calc-result :error))
                  ;; Check if this is a simple literal or a calculation
                  (is-literal (and result
-                                  (string-match-p "^[0-9.-]+$" (string-trim expression))
+                                  (numerals-utils-is-numeric-string-p (string-trim expression))
                                   (null dependencies))))
             (if result
                 (progn
