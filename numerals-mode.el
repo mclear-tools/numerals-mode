@@ -33,7 +33,6 @@
 (require 'numerals-variables)
 (require 'numerals-display)
 (require 'numerals-tables)
-(require 'numerals-utils)
 
 (defgroup numerals nil
   "Literate calculation mode."
@@ -504,6 +503,7 @@ Returns a cons (START . END) of the formula position, or nil if not found."
           (numerals-mode -1))))
     ;; Reload all modules using dynamic path resolution
     (let ((base-dir (file-name-directory (or load-file-name buffer-file-name))))
+      (load (expand-file-name "numerals-utils.el" base-dir))
       (load (expand-file-name "numerals-parser.el" base-dir))
       (load (expand-file-name "numerals-calc.el" base-dir))
       (load (expand-file-name "numerals-table-refs.el" base-dir))
