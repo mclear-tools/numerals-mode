@@ -26,6 +26,7 @@
 (when load-file-name
   (add-to-list 'load-path (file-name-directory load-file-name)))
 
+(require 'numerals-utils)
 (require 'numerals-parser)
 (require 'numerals-calc)
 (require 'numerals-table-refs)

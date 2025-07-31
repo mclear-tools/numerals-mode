@@ -18,6 +18,7 @@
 (require 'calc)
 (require 'calc-ext)
 (require 'cl-lib)
+(require 'numerals-utils)
 
 ;; Ensure calc is properly initialized
 (unless (featurep 'calc-aent)
@@ -30,7 +31,6 @@
   "Substitute VARIABLES in EXPRESSION with their values.
 VARIABLES is an alist of (name . value) pairs.
 Returns the expression with variables replaced by their values."
-  (require 'numerals-utils)
   (if (null variables)
       expression
     (let ((result expression)
@@ -65,7 +65,6 @@ Returns the expression with variables replaced by their values."
   "Evaluate mathematical EXPRESSION using calc without table-refs substitution.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
-  (require 'numerals-utils)
   (condition-case err
       (let* (;; Skip table reference substitution for local table processing
              ;; Strip commas from numeric literals first
@@ -111,7 +110,6 @@ Returns a plist with :value (the result) and :error (error message if any)."
   "Evaluate mathematical EXPRESSION using calc.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
-  (require 'numerals-utils)
   (condition-case err
       (let* (;; First strip commas from numeric literals
              (comma-stripped (replace-regexp-in-string
@@ -163,7 +161,6 @@ Returns a plist with :value (the result) and :error (error message if any)."
 (defun numerals-calc-format-result (result)
   "Format the calculation RESULT for display.
 Handles number formatting and error display."
-  (require 'numerals-utils)
   (cond
    ((null result) "Error")
    ((string-match-p "\\." result)

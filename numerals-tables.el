@@ -17,8 +17,8 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'numerals-calc)
 (require 'numerals-utils)
+(require 'numerals-calc)
 
 ;;; Table Detection
 
