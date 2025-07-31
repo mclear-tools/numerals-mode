@@ -32,6 +32,25 @@ Group 2: expression")
   "Regexp matching standalone calculation lines.
 Group 1: expression")
 
+(defun numerals-parser-is-commented-line-p (line)
+  "Check if LINE is a comment line based on current buffer's major mode.
+Returns t if the line should be treated as a comment and ignored."
+  (let ((trimmed (string-trim line)))
+    (cond
+     ;; Org-mode comments (# at start)
+     ((derived-mode-p 'org-mode)
+      (string-match-p "^#" trimmed))
+     ;; Markdown comments (HTML-style comments)
+     ((or (derived-mode-p 'markdown-mode)
+          (derived-mode-p 'gfm-mode))
+      (string-match-p "^<!--" trimmed))
+     ;; General text files - support common comment styles
+     (t
+      (or (string-match-p "^#" trimmed)      ; Shell/Python style
+          (string-match-p "^//" trimmed)     ; C++/JavaScript style
+          (string-match-p "^<!--" trimmed)   ; HTML style
+          (string-match-p "^%" trimmed))))))  ; LaTeX style
+
 (defun numerals-parser-parse-line (line)
   "Parse a single LINE and return its type and components.
 Returns a plist with the following properties:
@@ -41,6 +60,10 @@ Returns a plist with the following properties:
   :line - the original line"
   (let ((trimmed (string-trim line)))
     (cond
+     ;; Skip commented lines based on major mode
+     ((numerals-parser-is-commented-line-p line)
+      (list :type 'text
+            :line line))
      ;; Variable assignment
      ((string-match numerals-parser-assignment-regexp trimmed)
       (list :type 'assignment
