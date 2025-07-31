@@ -148,6 +148,9 @@ Key bindings:
 (defun numerals-display-table-result (start end result)
   "Display RESULT as an overlay replacing entire cell content from START to END.
 CRITICAL: Maintains exact character count for perfect pipe alignment."
+  ;; Ensure numerals-utils is loaded
+  (unless (fboundp 'numerals-utils-is-numeric-string-p)
+    (require 'numerals-utils))
   (let* ((original-cell-content (buffer-substring start end))
          (original-length (length original-cell-content))
          (result-length (length result))
@@ -282,6 +285,9 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
 (defun numerals-process-line ()
   "Process the current line for calculations.
 Returns the parse result for the line."
+  ;; Ensure numerals-utils is loaded
+  (unless (fboundp 'numerals-utils-is-numeric-string-p)
+    (require 'numerals-utils))
   (let* ((line (buffer-substring-no-properties
                 (line-beginning-position)
                 (line-end-position)))

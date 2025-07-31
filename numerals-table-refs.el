@@ -24,6 +24,9 @@
 (defun numerals-simple-table-refs-substitute (expression)
   "Replace table references in EXPRESSION with their values.
 Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
+  ;; Ensure numerals-utils is loaded
+  (unless (fboundp 'numerals-utils-is-numeric-string-p)
+    (require 'numerals-utils))
   (let ((result expression))
     ;; Handle TableName.TOTALS[N] format - convert to actual cell reference
     (setq result (replace-regexp-in-string

@@ -375,6 +375,9 @@ Returns formula with variables replaced by their values."
 (defun numerals-table-process-formula (formula table current-row current-col)
   "Process FORMULA in the context of TABLE at CURRENT-ROW and CURRENT-COL.
 Returns the calculated result as a string."
+  ;; Ensure numerals-utils is loaded
+  (unless (fboundp 'numerals-utils-is-numeric-string-p)
+    (require 'numerals-utils))
   (condition-case err
       (let ((expanded (condition-case expand-err
                           (numerals-table-expand-references formula table current-row current-col)
