@@ -141,11 +141,18 @@ Handles number formatting and error display."
   (cond
    ((null result) "Error")
    ((string-match-p "\\." result)
-    ;; Format decimal numbers nicely
-    (let ((num (string-to-number result)))
-      (if (= (floor num) num)
-          (format "%.0f" num)
-        (format "%.2f" num))))
+    ;; Format decimal numbers with up to 4 decimal places, removing trailing zeros
+    (let* ((num (string-to-number result))
+           (formatted (format "%.4f" num)))
+      ;; Remove trailing zeros after decimal point
+      (cond
+       ;; If it ends with .0000, just remove the decimal point
+       ((string-match "\\.0+$" formatted)
+        (replace-match "" nil nil formatted))
+       ;; If it has trailing zeros after other digits, remove them
+       ((string-match "\\(\\.[0-9]*?[1-9]\\)0+$" formatted)
+        (replace-match "\\1" nil nil formatted))
+       (t formatted))))
    (t result)))
 
 

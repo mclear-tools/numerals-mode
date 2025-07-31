@@ -305,7 +305,7 @@ Returns the parse result for the line."
                 (progn
                   (numerals-variables-set var-name result expression dependencies)
                   (numerals-display-result (point) 
-                                           (numerals-calc-format-result result)
+                                           (if is-literal expression (numerals-calc-format-result result))
                                            nil
                                            (if is-literal nil 'numerals-calculated-face))
                   ;; Add bold formatting to the variable name
