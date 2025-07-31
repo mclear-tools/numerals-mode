@@ -1,0 +1,19 @@
+#+TITLE: Simple Comma Test
+
+* Basic Variables
+
+Revenue = 1,000,000
+Expenses = 250,000
+Net = Revenue - Expenses
+
+* Simple Table
+
+| Amount | Tax    | Total   |
+|--------|--------|---------|
+| 10,000 | 765    | =A2+B2  |
+| 25,000 | 1,875  | =A3+B3  |
+
+* Mixed Calculations
+
+Simple = 1,000 + 2,000
+Complex = Revenue * 0.075

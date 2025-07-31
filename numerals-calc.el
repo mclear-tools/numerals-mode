@@ -65,12 +65,19 @@ Returns the expression with variables replaced by their values."
   "Evaluate mathematical EXPRESSION using calc without table-refs substitution.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
+  (require 'numerals-utils)
   (condition-case err
       (let* (;; Skip table reference substitution for local table processing
+             ;; Strip commas from numeric literals first
+             (comma-stripped (replace-regexp-in-string
+                              "\\b\\([0-9]\\{1,3\\}\\(?:,[0-9]\\{3\\}\\)*\\(?:\\.[0-9]+\\)?\\)\\b"
+                              (lambda (match)
+                                (numerals-utils-strip-commas match))
+                              expression))
              ;; Then substitute variables
              (substituted (if (and variables (listp variables))
-                              (numerals-calc-substitute-variables expression variables)
-                            expression))
+                              (numerals-calc-substitute-variables comma-stripped variables)
+                            comma-stripped))
              ;; Ensure calc is in a clean state
              (calc-language nil)
              (calc-algebraic-mode t)
@@ -104,15 +111,22 @@ Returns a plist with :value (the result) and :error (error message if any)."
   "Evaluate mathematical EXPRESSION using calc.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
+  (require 'numerals-utils)
   (condition-case err
-      (let* (;; First substitute table references
+      (let* (;; First strip commas from numeric literals
+             (comma-stripped (replace-regexp-in-string
+                              "\\b\\([0-9]\\{1,3\\}\\(?:,[0-9]\\{3\\}\\)*\\(?:\\.[0-9]+\\)?\\)\\b"
+                              (lambda (match)
+                                (numerals-utils-strip-commas match))
+                              expression))
+             ;; Then substitute table references
              (table-substituted (condition-case table-err
                                     (if (fboundp 'numerals-table-refs-substitute)
-                                        (numerals-table-refs-substitute expression variables)
-                                      expression)
+                                        (numerals-table-refs-substitute comma-stripped variables)
+                                      comma-stripped)
                                   (error
                                    (message "Table substitution error: %s" (error-message-string table-err))
-                                   expression)))
+                                   comma-stripped)))
              ;; Then substitute variables
              (substituted (if variables
                               (numerals-calc-substitute-variables table-substituted variables)

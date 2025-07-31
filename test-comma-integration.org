@@ -1,0 +1,43 @@
+#+TITLE: Comma Support Test File for Numerals Mode
+
+* Simple Variables with Commas
+
+Revenue = 1,000,000
+Expenses = 250,000
+Net_Income = Revenue - Expenses
+
+Large_Number = 12,345,678.90
+Small_Number = 1,234.56
+Negative = -50,000
+
+* Table with Comma Input
+
+#+NAME: Budget
+| Item      | Amount   | Tax     | Total    |
+|-----------|----------|---------|----------|
+| Salary    | 100,000  | 7,650   | =B2+C2   |
+| Equipment | 25,000   | 1,875   | =B3+C3   |
+| Travel    | 5,000    | 375     | =B4+C4   |
+| TOTALS    | =SUM(B2:B4) | =SUM(C2:C4) | =SUM(D2:D4) |
+
+* Cross-Table References
+
+Budget_Total_Amount = Budget.B5
+Budget_Total_Tax = Budget.C5
+Budget_Grand_Total = Budget.D5
+
+Combined_Budget = Budget_Total_Amount + Large_Number
+
+* Complex Calculations
+
+Tax_Rate = 0.0765
+FICA_Amount = Revenue * Tax_Rate
+Total_Deductions = FICA_Amount + Expenses
+
+Final_Result = Total_Deductions - 100,000
+
+* Mixed Calculations
+
+Simple_Sum = 1,000 + 2,000 + 3,000
+With_Decimals = 1,234.56 + 2,345.67
+Large_Calc = 1,000,000 - 250,000 + 50,000
