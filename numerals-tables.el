@@ -159,6 +159,21 @@ Returns a plist with :start-row :start-col :end-row :end-col."
 
 ;;; Cell Access
 
+(defvar-local numerals-table-cell-cache nil
+  "Cache of calculated cell values for cross-references.")
+
+(defun numerals-table-get-cached-cell-value (table row col)
+  "Get cached calculated value for cell at ROW, COL if available."
+  (let ((cache-key (format "%d-%d" row col)))
+    (cdr (assoc cache-key numerals-table-cell-cache))))
+
+(defun numerals-table-cache-cell-value (table row col value)
+  "Cache the calculated VALUE for cell at ROW, COL."
+  (let ((cache-key (format "%d-%d" row col)))
+    (setq numerals-table-cell-cache 
+          (cons (cons cache-key value)
+                (assq-delete-all cache-key numerals-table-cell-cache)))))
+
 (defun numerals-table-get-cell (table row col &optional evaluate-formulas)
   "Get the value of cell at ROW and COL in TABLE.
 ROW and COL are 1-indexed. TABLE is a parsed table structure.
@@ -330,14 +345,24 @@ Returns the cell value or error value if not found."
                 (let ((ref-key (format "%d-%d" row col)))
                   (if (member ref-key numerals-table-expansion-stack)
                       numerals-utils-error-zero
-                    (condition-case nil
+                    (condition-case err
+                        ;; Try to get the already calculated/displayed value first
                         (let ((numerals-table-expansion-stack 
-                               (cons ref-key numerals-table-expansion-stack))
-                              (eval-value (numerals-table-get-cell table row col t)))
-                          (if eval-value 
-                              (string-trim eval-value) 
-                            numerals-utils-error-zero))
-                      (error numerals-utils-error-zero))))))
+                               (cons ref-key numerals-table-expansion-stack)))
+                          ;; First try: check if this cell has already been calculated and stored
+                          (or (numerals-table-get-cached-cell-value table row col)
+                              ;; Second try: evaluate the formula directly
+                              (let ((formula (string-match "^[ \t]*=[ \t]*\\(.+\\)" value))
+                                    (formula-expr (when formula (match-string 1 value))))
+                                (if formula-expr
+                                    (let ((result (numerals-table-process-formula formula-expr table row col)))
+                                      (if (and result (not (string-prefix-p "Error" result)))
+                                          (string-trim result)
+                                        numerals-utils-error-zero))
+                                  numerals-utils-error-zero))))
+                      (error 
+                       ;; If all else fails, return 0 but log the error
+                       numerals-utils-error-zero))))))
           numerals-utils-error-zero))
     (error numerals-utils-error-zero)))
 

@@ -194,6 +194,7 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
       (numerals-display-clear-all)
       (numerals-variables-clear)
       (setq numerals-processed-positions nil)
+      (setq numerals-table-cell-cache nil)
       
       ;; Pass 1: Process simple variables first (literals and basic math)
       (goto-char (point-min))
@@ -395,6 +396,9 @@ TABLE is the parsed table structure, ROW-NUM is the 1-indexed row number."
         (let* ((formula (match-string 1 cell))
                (result (numerals-table-process-formula formula table row-num col-num))
                (formula-text (concat "=" formula)))
+          ;; Cache the calculated result for cross-references
+          (when result
+            (numerals-table-cache-cell-value table row-num col-num result))
           ;; Search for the formula text at the specific row/column position
           (save-excursion
             (let ((found-position (numerals-find-formula-at-position table row-num col-num formula-text)))
