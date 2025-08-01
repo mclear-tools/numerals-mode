@@ -323,32 +323,30 @@ Returns the cell value or error value if not found."
         (if cell
             (let* ((row (plist-get cell :row))
                    (col (plist-get cell :col))
-                   (value (numerals-table-get-cell table row col nil)))
-              (if (and value (not (string-match "^[ \t]*=" value)))
+                   (raw-value (numerals-table-get-cell table row col nil)))
+              (if (and raw-value (not (string-match "^[ \t]*=" raw-value)))
                   ;; Literal value - use directly
-                  (string-trim value)
-                ;; Formula - evaluate with recursion protection
+                  (string-trim raw-value)
+                ;; Formula - try simple evaluation without deep recursion
                 (let ((ref-key (format "%d-%d" row col)))
                   (if (member ref-key numerals-table-expansion-stack)
                       numerals-utils-error-zero
-                    (condition-case err
-                        ;; Try to get the already calculated/displayed value first
+                    (condition-case nil
                         (let ((numerals-table-expansion-stack 
                                (cons ref-key numerals-table-expansion-stack)))
-                          ;; First try: check if this cell has already been calculated and stored
-                          (or (numerals-table-get-cached-cell-value table row col)
-                              ;; Second try: evaluate the formula directly
-                              (let ((formula (string-match "^[ \t]*=[ \t]*\\(.+\\)" value))
-                                    (formula-expr (when formula (match-string 1 value))))
-                                (if formula-expr
-                                    (let ((result (numerals-table-process-formula formula-expr table row col)))
-                                      (if (and result (not (string-prefix-p "Error" result)))
-                                          (string-trim result)
-                                        numerals-utils-error-zero))
-                                  numerals-utils-error-zero))))
-                      (error 
-                       ;; If all else fails, return 0 but log the error
-                       numerals-utils-error-zero))))))
+                          ;; For formulas, try to evaluate using calc directly
+                          (if (string-match "^[ \t]*=[ \t]*\\(.+\\)" raw-value)
+                              (let ((formula-expr (match-string 1 raw-value)))
+                                ;; Expand simple references in the formula without recursion
+                                (let ((simple-expanded (numerals-table-expand-simple-references formula-expr table)))
+                                  (condition-case nil
+                                      (let ((calc-result (calc-eval simple-expanded)))
+                                        (if (stringp calc-result)
+                                            (string-trim calc-result)
+                                          (string-trim (format "%s" calc-result))))
+                                    (error numerals-utils-error-zero))))
+                            numerals-utils-error-zero))
+                      (error numerals-utils-error-zero))))))
           numerals-utils-error-zero))
     (error numerals-utils-error-zero)))
 

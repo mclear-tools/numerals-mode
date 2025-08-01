@@ -170,22 +170,5 @@ Returns (MATCHING . NON-MATCHING)."
         (push item non-matching)))
     (cons (nreverse matching) (nreverse non-matching))))
 
-;;; Cell value caching (shared across modules)
-
-(defvar-local numerals-table-cell-cache nil
-  "Cache of calculated cell values for cross-references.")
-
-(defun numerals-table-get-cached-cell-value (table row col)
-  "Get cached calculated value for cell at ROW, COL if available."
-  (let ((cache-key (format "%d-%d" row col)))
-    (cdr (assoc cache-key numerals-table-cell-cache))))
-
-(defun numerals-table-cache-cell-value (table row col value)
-  "Cache the calculated VALUE for cell at ROW, COL."
-  (let ((cache-key (format "%d-%d" row col)))
-    (setq numerals-table-cell-cache 
-          (cons (cons cache-key value)
-                (assq-delete-all cache-key numerals-table-cell-cache)))))
-
 (provide 'numerals-utils)
 ;;; numerals-utils.el ends here
