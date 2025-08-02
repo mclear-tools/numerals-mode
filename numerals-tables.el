@@ -164,15 +164,18 @@ Returns a plist with :start-row :start-col :end-row :end-col."
   "Get the value of cell at ROW and COL in TABLE.
 ROW and COL are 1-indexed. TABLE is a parsed table structure.
 If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
-  (let* ((data (plist-get table :data))
-         (headers (plist-get table :headers))
-         (row-data (cond
-                    ((and headers (= row 1)) headers)
-                    (headers (nth (- row 2) data))
-                    (t (nth (- row 1) data))))
-         (raw-value (when (and row-data (> col 0) (<= col (length row-data)))
-                      (nth (- col 1) row-data))))
-      (if (and evaluate-formulas raw-value 
+  (condition-case err
+      (let* ((data (plist-get table :data))
+             (headers (plist-get table :headers))
+             (row-data (cond
+                        ((and headers (= row 1)) headers)
+                        (headers (when (>= (length data) (- row 1))
+                                   (nth (- row 2) data)))
+                        (t (when (>= (length data) row)
+                             (nth (- row 1) data)))))
+             (raw-value (when (and row-data (> col 0) (<= col (length row-data)))
+                          (nth (- col 1) row-data))))
+        (if (and evaluate-formulas raw-value 
              (string-match "^[ \t]*=[ \t]*\\(.+\\)" raw-value))
         ;; This is a formula - evaluate it
         (let ((formula (condition-case err
@@ -189,8 +192,9 @@ If EVALUATE-FORMULAS is non-nil, evaluate formulas before returning."
                       (numerals-table-process-formula formula table row col))
                   (error "Error")))
             "Error"))
-      ;; Return raw value
-      raw-value)))
+        ;; Return raw value
+        raw-value))
+    (error nil)))
 
 (defun numerals-table-get-range-values (table range-spec &optional evaluate-formulas)
   "Get all values in RANGE-SPEC from TABLE.
@@ -259,7 +263,7 @@ Only expands references to literal values, not other formulas."
                                                            nil)))) ; Don't evaluate formulas
         (let ((replacement (if (and raw-value 
                                    (not (string-match "^[ \t]*=" raw-value))) ; Not a formula
-                              raw-value
+                              (numerals-utils-strip-commas raw-value)
                             "0"))) ; Use 0 for formulas to avoid recursion
           (setq result (replace-match replacement t t result))
           (setq loop-count (1+ loop-count)))))
@@ -317,7 +321,7 @@ Returns formula with SUM calls replaced by calculated values."
 
 (defun numerals-table--expand-cell-reference (ref table)
   "Expand single cell reference REF using TABLE data.
-Returns the cell value or error value if not found."
+Returns the calculated cell value or error value if not found."
   (condition-case nil
       (let ((cell (numerals-table-parse-reference ref)))
         (if cell
@@ -325,39 +329,47 @@ Returns the cell value or error value if not found."
                    (col (plist-get cell :col))
                    (raw-value (numerals-table-get-cell table row col nil)))
               (if (and raw-value (not (string-match "^[ \t]*=" raw-value)))
-                  ;; Literal value - use directly
-                  (string-trim raw-value)
-                ;; Formula - try simple evaluation without deep recursion
+                  ;; Literal value - strip commas for calc compatibility
+                  (numerals-utils-strip-commas (string-trim raw-value))
+                ;; Formula - get its calculated value
                 (let ((ref-key (format "%d-%d" row col)))
                   (if (member ref-key numerals-table-expansion-stack)
-                      numerals-utils-error-zero
+                      "0"  ; Avoid infinite recursion
                     (condition-case nil
                         (let ((numerals-table-expansion-stack 
                                (cons ref-key numerals-table-expansion-stack)))
-                          ;; For formulas, try to evaluate using calc directly
+                          ;; Process the formula to get its calculated result
                           (if (string-match "^[ \t]*=[ \t]*\\(.+\\)" raw-value)
                               (let ((formula-expr (match-string 1 raw-value)))
-                                ;; Expand simple references in the formula without recursion
-                                (let ((simple-expanded (numerals-table-expand-simple-references formula-expr table)))
-                                  (condition-case nil
-                                      (let ((calc-result (calc-eval simple-expanded)))
-                                        (if (stringp calc-result)
-                                            (string-trim calc-result)
-                                          (string-trim (format "%s" calc-result))))
-                                    (error numerals-utils-error-zero))))
-                            numerals-utils-error-zero))
-                      (error numerals-utils-error-zero))))))
+                                (let ((calculated-result (numerals-table-process-formula formula-expr table row col)))
+                                  (if (numerals-utils-is-numeric-string-p calculated-result)
+                                      (numerals-utils-strip-commas calculated-result)
+                                    "0")))
+                            "0"))
+                      (error "0"))))))
           numerals-utils-error-zero))
     (error numerals-utils-error-zero)))
 
 (defun numerals-table--expand-cell-references (formula table)
   "Expand all cell references in FORMULA using TABLE data.
 Returns formula with cell references replaced by their values."
-  (replace-regexp-in-string
-   "\\b\\([A-Z]+[0-9]+\\)\\b"
-   (lambda (match)
-     (numerals-table--expand-cell-reference (match-string 1 match) table))
-   formula t))
+  (let ((result formula)
+        (loop-count 0)
+        (max-loops 50)) ; Safety limit to prevent infinite loops
+    (while (and (string-match "\\b\\([A-Z]+[0-9]+\\)\\b" result)
+                (< loop-count max-loops))
+      (let* ((cell-ref (match-string 1 result))
+             (start-pos (match-beginning 0))
+             (end-pos (match-end 0))
+             (replacement (condition-case nil
+                              (numerals-table--expand-cell-reference cell-ref table)
+                            (error "0"))))
+        (setq result (concat (substring result 0 start-pos)
+                            replacement
+                            (substring result end-pos)))
+        (setq loop-count (1+ loop-count))))
+    result))
+
 
 (defun numerals-table--expand-variable-references (formula)
   "Expand variable references in FORMULA.

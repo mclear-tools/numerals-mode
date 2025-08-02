@@ -183,6 +183,10 @@ Handles number formatting and error display."
     (require 'numerals-utils))
   (cond
    ((null result) "Error")
+   ;; Check if result contains non-numeric characters (except . and -)
+   ((and (stringp result) (string-match-p "[^0-9.-]" result))
+    ;; This is not a number - return as-is without formatting
+    result)
    ((string-match-p "\\." result)
     ;; Format decimal numbers with up to 4 decimal places, removing trailing zeros
     (let* ((num (string-to-number result))
