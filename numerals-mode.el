@@ -213,7 +213,7 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
       (goto-char (point-min))
       (while (not (eobp))
         (unless (numerals-table-at-point-p)
-          (let ((pos (point)))
+          (let ((pos (line-beginning-position)))
             (unless (member pos numerals-processed-positions)
               (numerals-process-line)
               (push pos numerals-processed-positions))))

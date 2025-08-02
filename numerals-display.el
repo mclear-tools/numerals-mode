@@ -84,7 +84,13 @@ FACE-OVERRIDE can specify a specific face to use."
       (let* ((line-end (save-excursion
                          (goto-char pos)
                          (line-end-position)))
-             (overlay (numerals-display--get-overlay line-end line-end))
+             ;; Check if there's already a numerals overlay at this position
+             (existing-overlay (seq-find (lambda (ov)
+                                           (and (overlay-get ov 'numerals-overlay)
+                                                (= (overlay-start ov) line-end)))
+                                         (overlays-at line-end)))
+             (overlay (or existing-overlay
+                          (numerals-display--get-overlay line-end line-end)))
              (face (cond (error-p 'numerals-error-face)
                          (face-override face-override)
                          (t 'numerals-result-face)))
@@ -93,8 +99,9 @@ FACE-OVERRIDE can specify a specific face to use."
         (overlay-put overlay 'after-string
                      (propertize text 'face face))
         (overlay-put overlay 'numerals-overlay t)
-        ;; Add to our list for cleanup
-        (push overlay numerals-display-overlays))
+        ;; Add to our list for cleanup only if it's new
+        (unless existing-overlay
+          (push overlay numerals-display-overlays)))
     (error
      (message "Display result error at pos %d: %s" pos (error-message-string err)))))
 
@@ -108,12 +115,20 @@ FACE-OVERRIDE can specify a specific face to use."
       (let* ((var-start (match-beginning 1))
              (var-end (match-end 1))
              (var-name (match-string 1))
-             (overlay (numerals-display--get-overlay var-start var-end)))
+             ;; Check if there's already a numerals overlay at this position
+             (existing-overlay (seq-find (lambda (ov)
+                                           (and (overlay-get ov 'numerals-overlay)
+                                                (= (overlay-start ov) var-start)
+                                                (= (overlay-end ov) var-end)))
+                                         (overlays-in var-start var-end)))
+             (overlay (or existing-overlay
+                          (numerals-display--get-overlay var-start var-end))))
         ;; Apply bold face to the variable name
         (overlay-put overlay 'face 'numerals-variable-face)
         (overlay-put overlay 'numerals-overlay t)
-        ;; Add to our list for cleanup
-        (push overlay numerals-display-overlays)))))
+        ;; Add to our list for cleanup only if it's new
+        (unless existing-overlay
+          (push overlay numerals-display-overlays))))))
 
 (defun numerals-display-clear-line (pos)
   "Clear any numerals overlays on the line containing POS."
