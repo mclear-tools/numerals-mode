@@ -1,6 +1,6 @@
 ;;; test-edge-cases.el --- Test edge cases for comma support
 
-(load "/Users/roambot/bin/lisp-projects/numerals-mode/numerals-mode.el")
+(load (expand-file-name "../numerals-mode.el" (file-name-directory load-file-name)))
 
 (message "=== EDGE CASE TESTS ===")
 
