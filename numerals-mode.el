@@ -66,7 +66,10 @@ Key bindings:
     (numerals-mode-disable)))
 
 (defun numerals-mode-enable ()
-  "Enable numerals-mode in the current buffer."
+  "Enable numerals-mode in the current buffer.
+This function initializes the variable system, disables org-mode table
+calculations if necessary, processes all calculations in the buffer,
+and sets up the after-save-hook for automatic recalculation."
   ;; Initialize variables
   (numerals-variables-init)
   ;; Disable org-mode table calculations if in org-mode
@@ -78,7 +81,9 @@ Key bindings:
   (add-hook 'after-save-hook #'numerals-update-buffer nil t))
 
 (defun numerals-mode-disable ()
-  "Disable numerals-mode in the current buffer."
+  "Disable numerals-mode in the current buffer.
+This function clears all overlays and variables, re-enables org-mode
+table calculations if necessary, and removes the after-save-hook."
   ;; Clear display
   (numerals-display-clear-all)
   ;; Clear variables

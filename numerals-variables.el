@@ -25,7 +25,10 @@
 
 (defun numerals-variables-set (name value expression dependencies)
   "Set variable NAME to VALUE.
-EXPRESSION and DEPENDENCIES are ignored in save-based mode."
+NAME is a string identifying the variable.
+VALUE is the computed numeric value to store.
+EXPRESSION is the original expression string (stored for reference).
+DEPENDENCIES is a list of variable names this variable depends on."
   ;; Store the value
   (puthash name value numerals-variables-table))
 
