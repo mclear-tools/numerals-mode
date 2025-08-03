@@ -33,6 +33,7 @@
 (require 'numerals-variables)
 (require 'numerals-display)
 (require 'numerals-tables)
+(require 'numerals-export)
 
 (defgroup numerals nil
   "Literate calculation mode."
@@ -78,7 +79,9 @@ and sets up the after-save-hook for automatic recalculation."
   ;; Process the buffer
   (numerals-update-buffer)
   ;; Set up hook to update on save
-  (add-hook 'after-save-hook #'numerals-update-buffer nil t))
+  (add-hook 'after-save-hook #'numerals-update-buffer nil t)
+  ;; Enable export integration
+  (numerals-export-enable))
 
 (defun numerals-mode-disable ()
   "Disable numerals-mode in the current buffer.
@@ -92,7 +95,9 @@ table calculations if necessary, and removes the after-save-hook."
   (when (derived-mode-p 'org-mode)
     (numerals-enable-org-table-calculations))
   ;; Remove hook
-  (remove-hook 'after-save-hook #'numerals-update-buffer t))
+  (remove-hook 'after-save-hook #'numerals-update-buffer t)
+  ;; Disable export integration
+  (numerals-export-disable))
 
 ;;; Org-mode Integration
 
@@ -515,6 +520,7 @@ Returns a cons (START . END) of the formula position, or nil if not found."
       (load (expand-file-name "numerals-variables.el" base-dir))
       (load (expand-file-name "numerals-display.el" base-dir))
       (load (expand-file-name "numerals-tables.el" base-dir))
+      (load (expand-file-name "numerals-export.el" base-dir))
       (load (expand-file-name "numerals-mode.el" base-dir)))
     ;; Re-enable in all previously enabled buffers
     (dolist (buffer enabled-buffers)
