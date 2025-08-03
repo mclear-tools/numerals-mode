@@ -18,15 +18,8 @@
 (require 'calc)
 (require 'calc-ext)
 (require 'cl-lib)
+(require 'numerals-utils)
 
-;; Add current directory to load-path for utils loading
-(when load-file-name
-  (add-to-list 'load-path (file-name-directory load-file-name)))
-
-;; Try to require numerals-utils, but don't fail if not found
-(condition-case nil
-    (require 'numerals-utils)
-  (error nil))
 
 ;; Ensure calc is properly initialized
 (unless (featurep 'calc-aent)
@@ -39,9 +32,6 @@
   "Substitute VARIABLES in EXPRESSION with their values.
 VARIABLES is an alist of (name . value) pairs.
 Returns the expression with variables replaced by their values."
-  ;; Ensure numerals-utils is loaded
-  (unless (fboundp 'numerals-utils-strip-commas)
-    (require 'numerals-utils))
   (if (null variables)
       expression
     (let ((result expression)
@@ -76,9 +66,6 @@ Returns the expression with variables replaced by their values."
   "Evaluate mathematical EXPRESSION using calc without table-refs substitution.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
-  ;; Ensure numerals-utils is loaded
-  (unless (fboundp 'numerals-utils-strip-commas)
-    (require 'numerals-utils))
   (condition-case err
       (let* (;; Skip table reference substitution for local table processing
              ;; Strip commas from numeric literals first
@@ -124,9 +111,6 @@ Returns a plist with :value (the result) and :error (error message if any)."
   "Evaluate mathematical EXPRESSION using calc.
 Optional VARIABLES is an alist of (name . value) pairs.
 Returns a plist with :value (the result) and :error (error message if any)."
-  ;; Ensure numerals-utils is loaded
-  (unless (fboundp 'numerals-utils-strip-commas)
-    (require 'numerals-utils))
   (condition-case err
       (let* (;; First strip commas from numeric literals
              (comma-stripped (replace-regexp-in-string
@@ -178,9 +162,6 @@ Returns a plist with :value (the result) and :error (error message if any)."
 (defun numerals-calc-format-result (result)
   "Format the calculation RESULT for display.
 Handles number formatting and error display."
-  ;; Ensure numerals-utils is loaded
-  (unless (fboundp 'numerals-utils-format-number-with-commas)
-    (require 'numerals-utils))
   (cond
    ((null result) "Error")
    ;; Check if result contains non-numeric characters (except . and -)
