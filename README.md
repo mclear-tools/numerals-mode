@@ -5,11 +5,14 @@ A minor mode that provides literate calculation functionality similar to Obsidia
 ## Features
 
 - **Variable Assignment**: Define variables with natural syntax like `Monthly Rent = 2350.00`
-- **Save-Based Updates**: Calculations update when you save the file (no lag while typing)
+- **Automatic Updates**: Calculations update when you save the file or manually trigger recalculation
 - **Variable References**: Use previously defined variables in calculations
-- **Table Calculations**: Support for calculations in markdown and org-mode tables
-- **Overlay Display**: Results appear as overlays, not modifying your file
-- **Natural Syntax**: Support for variable names with spaces
+- **Table Calculations**: Full support for Excel-style formulas in markdown and org-mode tables
+- **Cross-Table References**: Reference cells from named tables (e.g., `Budget.TOTALS[0]`)
+- **Overlay Display**: Results appear as non-intrusive overlays without modifying your file
+- **Natural Syntax**: Support for variable names with spaces and comma-formatted numbers
+- **Dependency Resolution**: Smart 4-pass system ensures correct calculation order
+- **Excel Functions**: SUM, AVERAGE, COUNT, MAX, MIN with cell ranges support
 
 ## Installation
 
@@ -77,20 +80,51 @@ Numerals mode supports calculations in both markdown and org-mode tables:
 
 Supported functions: `SUM`, `AVERAGE`, `COUNT`, `MAX`, `MIN`
 
-### Commands
+### Cross-Table References
 
-- `numerals-mode`: Toggle numerals mode
-- `numerals-recalculate`: Manually recalculate all expressions
-- `numerals-clear`: Clear all variables and calculations
+Reference cells from named tables using multiple formats:
 
-Calculations automatically update when you save the file (`C-x C-s`).
+```org
+#+NAME: Budget
+| Employee | Salary   | FICA    |
+|----------|----------|---------|  
+| Alice    | 100,000  | =B2*0.0765 |
+| Bob      | 80,000   | =B3*0.0765 |
+| TOTALS   | =SUM(B2:B3) | =SUM(C2:C3) |
 
-## Examplesl- `examples/property-analysis.txt` - Property investment calculations with variables
+Total FICA Cost = Budget.TOTALS[1]     # Reference TOTALS row, column 1
+Alice's Salary = Budget.B2             # Direct cell reference
+Total Payroll = Budget[4,1]            # Row 4, column 1 format
+```
+
+
+## Examples
+
+Check out the example files:
+- `examples/property-analysis.txt` - Property investment calculations with variables
 - `examples/table-calculations.txt` - Table calculation examples for both org-mode and markdown
 
 ## Requirements
 
 - Emacs 26.1 or later (for built-in calc support)
+
+## Technical Details
+
+### Dependency Resolution
+
+Numerals-mode uses a sophisticated 4-pass dependency resolution system:
+1. **Pass 1**: Simple variables (literals and basic math)
+2. **Pass 2**: Tables (can reference simple variables)
+3. **Pass 3**: Complex variables (can reference tables and other variables)
+4. **Pass 4**: Table reprocessing (for formulas referencing complex variables)
+
+This ensures that calculations always occur in the correct order, preventing "undefined variable" errors.
+
+### Performance
+
+- Overlay pooling for efficient memory usage
+- Position tracking to prevent duplicate processing
+- Selective reprocessing of only changed elements
 
 ## License
 
