@@ -67,31 +67,85 @@ This function determines the substitution logic:
        ;; Default: don't substitute
        (t nil)))))
 
+(defvar-local numerals-export-overlay-data nil
+  "Cache of overlay data for export substitution.")
+
+(defun numerals-export-cache-overlay-data ()
+  "Cache overlay data for export substitution.
+This must be called from the original buffer before export begins."
+  (when (and (boundp 'numerals-mode) numerals-mode)
+    (setq numerals-export-overlay-data '())
+    (dolist (overlay numerals-display-overlays)
+      (when (and (overlay-buffer overlay)
+                 (numerals-export-should-substitute-overlay-p overlay))
+        (let* ((start (overlay-start overlay))
+               (end (overlay-end overlay))
+               (display-text (overlay-get overlay 'display))
+               (after-string (overlay-get overlay 'after-string))
+               (line-text (save-excursion
+                            (goto-char start)
+                            (buffer-substring-no-properties
+                             (line-beginning-position)
+                             (line-end-position)))))
+          (push (list :start start
+                      :end end  
+                      :display-text display-text
+                      :after-string after-string
+                      :line-text line-text)
+                numerals-export-overlay-data))))
+    (setq numerals-export-overlay-data (nreverse numerals-export-overlay-data))))
+
 (defun numerals-export-substitute-overlays (backend)
   "Replace numerals overlays with calculated values for export.
 BACKEND is the export backend being used, as a symbol.
 This function operates on a temporary copy of the buffer during export."
-  (when (and numerals-mode numerals-export-substitute-overlays)
+  (when (and numerals-export-substitute-overlays numerals-export-overlay-data)
+    (message "DEBUG: Export substitution called for backend: %s" backend)
+    (message "DEBUG: Found %d cached overlays" (length numerals-export-overlay-data))
     (save-excursion
       (save-restriction
         (widen)
-        ;; Process overlays from end to beginning to avoid position shifts
-        (let ((overlays-to-process '()))
-          ;; Collect overlays that should be substituted
-          (dolist (overlay numerals-display-overlays)
-            (when (and (overlay-buffer overlay)
-                       (eq (overlay-buffer overlay) (current-buffer))
-                       (numerals-export-should-substitute-overlay-p overlay))
-              (push overlay overlays-to-process)))
-          
-          ;; Sort by position (end to beginning) to avoid position shifts
-          (setq overlays-to-process
-                (sort overlays-to-process
-                      (lambda (a b) (> (overlay-start a) (overlay-start b)))))
-          
-          ;; Substitute each overlay
-          (dolist (overlay overlays-to-process)
-            (numerals-export-substitute-single-overlay overlay)))))))
+        ;; Process cached overlay data from end to beginning to avoid position shifts
+        (let ((sorted-overlays (sort (copy-sequence numerals-export-overlay-data)
+                                     (lambda (a b) 
+                                       (> (plist-get a :start) (plist-get b :start))))))
+          (dolist (overlay-data sorted-overlays)
+            (numerals-export-substitute-from-data overlay-data))
+          (message "DEBUG: Export substitution completed"))))))
+
+(defun numerals-export-substitute-from-data (overlay-data)
+  "Substitute overlay content using cached OVERLAY-DATA.
+This function searches for the line content and substitutes accordingly."
+  (let* ((line-text (plist-get overlay-data :line-text))
+         (display-text (plist-get overlay-data :display-text))
+         (after-string (plist-get overlay-data :after-string)))
+    (save-excursion
+      (goto-char (point-min))
+      ;; Search for the exact line content
+      (when (search-forward line-text nil t)
+        (cond
+         ;; Table formula overlay - find and replace the formula in the line
+         (display-text
+          (let ((line-start (line-beginning-position))
+                (line-end (line-end-position)))
+            ;; Look for formulas in this line and replace them
+            (goto-char line-start)
+            (while (re-search-forward "=\\([^|]+\\)" line-end t)
+              (let* ((formula-start (match-beginning 0))
+                     (formula-end (match-end 0))
+                     (formula-content (match-string 0)))
+                ;; Replace the formula with the calculated result
+                (goto-char formula-start)
+                (delete-region formula-start formula-end)
+                (insert (substring-no-properties display-text))
+                ;; Update line-end position after replacement
+                (setq line-end (+ line-end (- (length display-text) 
+                                              (length formula-content))))))))
+         
+         ;; Variable/calculation overlay - append result to end of line
+         (after-string
+          (end-of-line)
+          (insert (substring-no-properties after-string)))))))
 
 (defun numerals-export-substitute-single-overlay (overlay)
   "Substitute a single OVERLAY with its calculated content.
@@ -114,15 +168,27 @@ This function modifies the buffer content directly."
 
 ;;; Hook Integration
 
+(defun numerals-export-prepare-for-export (backend)
+  "Prepare overlay data for export by caching it.
+This hook runs very early in the export process while overlays are still available."
+  (when (and (boundp 'numerals-mode) numerals-mode)
+    (numerals-export-cache-overlay-data)))
+
 (defun numerals-export-enable ()
   "Enable numerals export integration.
 Adds hooks to org-mode's export process."
+  ;; Cache overlay data before export processing begins
+  (add-hook 'org-export-before-processing-functions 
+            #'numerals-export-prepare-for-export)
+  ;; Substitute overlays during export processing  
   (add-hook 'org-export-before-processing-functions 
             #'numerals-export-substitute-overlays))
 
 (defun numerals-export-disable ()
   "Disable numerals export integration.
 Removes hooks from org-mode's export process."
+  (remove-hook 'org-export-before-processing-functions 
+               #'numerals-export-prepare-for-export)
   (remove-hook 'org-export-before-processing-functions 
                #'numerals-export-substitute-overlays))
 
