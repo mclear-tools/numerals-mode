@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-08-03 Sun 19:48 -->
+<!-- 2025-08-03 Sun 21:22 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Numerals Mode Export Test</title>
@@ -201,31 +201,31 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org7f9ae6b">1. Export Test Cases</a>
+<li><a href="#org621f1a9">1. Export Test Cases</a>
 <ul>
-<li><a href="#orgfbffeec">1.1. Simple Literal Assignments (Should NOT show overlay in export)</a></li>
-<li><a href="#org7a2fa53">1.2. Complex Expression Assignments (SHOULD show overlay in export)</a></li>
-<li><a href="#org44887af">1.3. Standalone Calculations (SHOULD show overlay in export)</a></li>
-<li><a href="#orgf3d19cf">1.4. Table Calculations (Formulas SHOULD be replaced with results)</a></li>
-<li><a href="#org525ca1a">1.5. Cross-Table References (SHOULD show overlay in export)</a></li>
-<li><a href="#org8d6302a">1.6. Mixed Expressions with Table References (SHOULD show overlay in export)</a></li>
-<li><a href="#org028a0cf">1.7. Complex Table with Cross-References</a></li>
-<li><a href="#org3e04406">1.8. Test Variables with Comma Formatting</a></li>
+<li><a href="#org5048383">1.1. Simple Literal Assignments (Should NOT show overlay in export)</a></li>
+<li><a href="#org3acab67">1.2. Complex Expression Assignments (SHOULD show overlay in export)</a></li>
+<li><a href="#org18c696d">1.3. Standalone Calculations (SHOULD show overlay in export)</a></li>
+<li><a href="#orgc26e47f">1.4. Table Calculations (Formulas SHOULD be replaced with results)</a></li>
+<li><a href="#orgb39cbdd">1.5. Cross-Table References (SHOULD show overlay in export)</a></li>
+<li><a href="#orga9a7afc">1.6. Mixed Expressions with Table References (SHOULD show overlay in export)</a></li>
+<li><a href="#org18cd952">1.7. Complex Table with Cross-References</a></li>
+<li><a href="#org70ce122">1.8. Test Variables with Comma Formatting</a></li>
 </ul>
 </li>
-<li><a href="#org0eb0a15">2. Export Instructions</a></li>
+<li><a href="#org0f24fac">2. Export Instructions</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org7f9ae6b" class="outline-2">
-<h2 id="org7f9ae6b"><span class="section-number-2">1.</span> Export Test Cases</h2>
+<div id="outline-container-org621f1a9" class="outline-2">
+<h2 id="org621f1a9"><span class="section-number-2">1.</span> Export Test Cases</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 This file tests various calculation types and their export behavior:
 </p>
 </div>
-<div id="outline-container-orgfbffeec" class="outline-3">
-<h3 id="orgfbffeec"><span class="section-number-3">1.1.</span> Simple Literal Assignments (Should NOT show overlay in export)</h3>
+<div id="outline-container-org5048383" class="outline-3">
+<h3 id="org5048383"><span class="section-number-3">1.1.</span> Simple Literal Assignments (Should NOT show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 Monthly Rent = 2350.00
@@ -234,8 +234,8 @@ Insurance = 800.50
 </p>
 </div>
 </div>
-<div id="outline-container-org7a2fa53" class="outline-3">
-<h3 id="org7a2fa53"><span class="section-number-3">1.2.</span> Complex Expression Assignments (SHOULD show overlay in export)</h3>
+<div id="outline-container-org3acab67" class="outline-3">
+<h3 id="org3acab67"><span class="section-number-3">1.2.</span> Complex Expression Assignments (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 Total Fixed Costs = Monthly Rent + Property Tax + Insurance =&gt; 4,350.5
@@ -244,8 +244,8 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4
 </p>
 </div>
 </div>
-<div id="outline-container-org44887af" class="outline-3">
-<h3 id="org44887af"><span class="section-number-3">1.3.</span> Standalone Calculations (SHOULD show overlay in export)</h3>
+<div id="outline-container-org18c696d" class="outline-3">
+<h3 id="org18c696d"><span class="section-number-3">1.3.</span> Standalone Calculations (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
 2500 + 1200 + 800
@@ -253,10 +253,10 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4
 </p>
 </div>
 </div>
-<div id="outline-container-orgf3d19cf" class="outline-3">
-<h3 id="orgf3d19cf"><span class="section-number-3">1.4.</span> Table Calculations (Formulas SHOULD be replaced with results)</h3>
+<div id="outline-container-orgc26e47f" class="outline-3">
+<h3 id="orgc26e47f"><span class="section-number-3">1.4.</span> Table Calculations (Formulas SHOULD be replaced with results)</h3>
 <div class="outline-text-3" id="text-1-4">
-<table id="org0a5b53c" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="orgd5a1262" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
@@ -315,8 +315,8 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4
 </table>
 </div>
 </div>
-<div id="outline-container-org525ca1a" class="outline-3">
-<h3 id="org525ca1a"><span class="section-number-3">1.5.</span> Cross-Table References (SHOULD show overlay in export)</h3>
+<div id="outline-container-orgb39cbdd" class="outline-3">
+<h3 id="orgb39cbdd"><span class="section-number-3">1.5.</span> Cross-Table References (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-5">
 <p>
 Total Annual Income = Budget.C2 =&gt; 28,200
@@ -325,8 +325,8 @@ Net Profit = Total Annual Income - Total Annual Expenses =&gt; Undefined variabl
 </p>
 </div>
 </div>
-<div id="outline-container-org8d6302a" class="outline-3">
-<h3 id="org8d6302a"><span class="section-number-3">1.6.</span> Mixed Expressions with Table References (SHOULD show overlay in export)</h3>
+<div id="outline-container-orga9a7afc" class="outline-3">
+<h3 id="orga9a7afc"><span class="section-number-3">1.6.</span> Mixed Expressions with Table References (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-6">
 <p>
 ROI Percentage = (Net Profit / (Budget.C2 * 0.2)) * 100 =&gt; Undefined variable
@@ -334,10 +334,10 @@ Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12 =&gt;
 </p>
 </div>
 </div>
-<div id="outline-container-org028a0cf" class="outline-3">
-<h3 id="org028a0cf"><span class="section-number-3">1.7.</span> Complex Table with Cross-References</h3>
+<div id="outline-container-org18cd952" class="outline-3">
+<h3 id="org18cd952"><span class="section-number-3">1.7.</span> Complex Table with Cross-References</h3>
 <div class="outline-text-3" id="text-1-7">
-<table id="org43da244" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="orge586076" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
@@ -363,21 +363,21 @@ Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12 =&gt;
 
 <tr>
 <td class="org-left">Net Rental Yield</td>
-<td class="org-left">(7 Expected `)')</td>
+<td class="org-left">(7 Expected `)&rsquo;)</td>
 <td class="org-left">After expenses</td>
 </tr>
 
 <tr>
 <td class="org-left">Monthly Net Cash Flow</td>
-<td class="org-left">(7 Expected `)')</td>
+<td class="org-left">(7 Expected `)&rsquo;)</td>
 <td class="org-left">Net income monthly</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<div id="outline-container-org3e04406" class="outline-3">
-<h3 id="org3e04406"><span class="section-number-3">1.8.</span> Test Variables with Comma Formatting</h3>
+<div id="outline-container-org70ce122" class="outline-3">
+<h3 id="org70ce122"><span class="section-number-3">1.8.</span> Test Variables with Comma Formatting</h3>
 <div class="outline-text-3" id="text-1-8">
 <p>
 Large Number = 1,234,567.89
@@ -387,8 +387,8 @@ Total = Large Number + Percentage =&gt; 1,296,296.2845
 </div>
 </div>
 </div>
-<div id="outline-container-org0eb0a15" class="outline-2">
-<h2 id="org0eb0a15"><span class="section-number-2">2.</span> Export Instructions</h2>
+<div id="outline-container-org0f24fac" class="outline-2">
+<h2 id="org0f24fac"><span class="section-number-2">2.</span> Export Instructions</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 To test the export functionality:
@@ -407,18 +407,13 @@ To test the export functionality:
 Expected behavior:
 </p>
 <ul class="org-ul">
-<li>Simple literals (like "Monthly Rent = 2350.00") should NOT show " =&gt; 2350" in export</li>
+<li>Simple literals (like &ldquo;Monthly Rent = 2350.00&rdquo;) should NOT show &ldquo; =&gt; 2350&rdquo; in export</li>
 <li>Complex expressions should show their calculated results</li>
 <li>Table formulas should be replaced entirely with calculated values</li>
 <li>Cross-table references should show calculated results</li>
 </ul>
 </div>
 </div>
-</div>
-<div id="postamble" class="status">
-<p class="author">Author: Colin McLear</p>
-<p class="date">Created: 2025-08-03 Sun 19:48</p>
-<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>

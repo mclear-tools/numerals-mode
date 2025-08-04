@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2025-08-03 Sun 21:28 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Numerals Mode Export Test</title>
+<meta name="author" content="Colin McLear" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Numerals Mode Export Test</h1>
+<div id="outline-container-org2818b81" class="outline-2">
+<h2 id="org2818b81"><span class="section-number-2">1.</span> Export Test Cases</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This file tests various calculation types and their export behavior:
+</p>
+</div>
+<div id="outline-container-org1481cec" class="outline-3">
+<h3 id="org1481cec"><span class="section-number-3">1.1.</span> Simple Literal Assignments (Should NOT show overlay in export)</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+Monthly Rent = 2350.00
+Property Tax = 1200
+Insurance = 800.50
+</p>
+</div>
+</div>
+<div id="outline-container-org3cf2435" class="outline-3">
+<h3 id="org3cf2435"><span class="section-number-3">1.2.</span> Complex Expression Assignments (SHOULD show overlay in export)</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+Total Fixed Costs = Monthly Rent + Property Tax + Insurance =&gt; 4,350.5
+Annual Rent Income = Monthly Rent * 12 =&gt; 28,200
+Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4,194
+</p>
+</div>
+</div>
+<div id="outline-container-org32cc0d3" class="outline-3">
+<h3 id="org32cc0d3"><span class="section-number-3">1.3.</span> Standalone Calculations (SHOULD show overlay in export)</h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+2500 + 1200 + 800
+(Monthly Rent * 0.08) + 150
+</p>
+</div>
+</div>
+<div id="outline-container-orgdbd3e6a" class="outline-3">
+<h3 id="orgdbd3e6a"><span class="section-number-3">1.4.</span> Table Calculations (Formulas SHOULD be replaced with results)</h3>
+<div class="outline-text-3" id="text-1-4">
+<table id="org5d37bf6" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Category</th>
+<th scope="col" class="org-right">Monthly</th>
+<th scope="col" class="org-left">Annual</th>
+<th scope="col" class="org-left">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Rental Income</td>
+<td class="org-right">2350</td>
+<td class="org-left">28,200</td>
+<td class="org-left">Monthly rent times 12</td>
+</tr>
+
+<tr>
+<td class="org-left">Property Tax</td>
+<td class="org-right">100</td>
+<td class="org-left">1,200</td>
+<td class="org-left">Monthly portion</td>
+</tr>
+
+<tr>
+<td class="org-left">Insurance</td>
+<td class="org-right">67</td>
+<td class="org-left">804</td>
+<td class="org-left">Monthly portion</td>
+</tr>
+
+<tr>
+<td class="org-left">Maintenance</td>
+<td class="org-right">200</td>
+<td class="org-left">2,400</td>
+<td class="org-left">Estimated monthly</td>
+</tr>
+
+<tr>
+<td class="org-left">TOTALS</td>
+<td class="org-right">32,604</td>
+<td class="org-left">32,604</td>
+<td class="org-left">Sum of all categories</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org43d7fee" class="outline-3">
+<h3 id="org43d7fee"><span class="section-number-3">1.5.</span> Cross-Table References (SHOULD show overlay in export)</h3>
+<div class="outline-text-3" id="text-1-5">
+<p>
+Total Annual Income = Budget.C2 =&gt; 28,200
+Total Annual Expenses = Budget.C6 - Budget.C2 =&gt; 4,404
+Net Profit = Total Annual Income - Total Annual Expenses =&gt; 23,796
+</p>
+</div>
+</div>
+<div id="outline-container-orgd1bce4b" class="outline-3">
+<h3 id="orgd1bce4b"><span class="section-number-3">1.6.</span> Mixed Expressions with Table References (SHOULD show overlay in export)</h3>
+<div class="outline-text-3" id="text-1-6">
+<p>
+ROI Percentage = (Net Profit / (Budget.C2 * 0.2)) * 100 =&gt; 421.9149
+Monthly Cash Flow = Budget.B6 - (Budget.C6 - Budget.C2) / 12 =&gt; 2,350
+</p>
+</div>
+</div>
+<div id="outline-container-org5be13bb" class="outline-3">
+<h3 id="org5be13bb"><span class="section-number-3">1.7.</span> Complex Table with Cross-References</h3>
+<div class="outline-text-3" id="text-1-7">
+<table id="orgca5487c" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Metric</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Gross Rental Yield</td>
+<td class="org-left">(6 Syntax error)</td>
+<td class="org-left">Annual rent / property value</td>
+</tr>
+
+<tr>
+<td class="org-left">Net Rental Yield</td>
+<td class="org-left">(7 Expected `)')</td>
+<td class="org-left">After expenses</td>
+</tr>
+
+<tr>
+<td class="org-left">Monthly Net Cash Flow</td>
+<td class="org-left">(7 Expected `)')</td>
+<td class="org-left">Net income monthly</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgb8f63c5" class="outline-3">
+<h3 id="orgb8f63c5"><span class="section-number-3">1.8.</span> Test Variables with Comma Formatting</h3>
+<div class="outline-text-3" id="text-1-8">
+<p>
+Large Number = 1,234,567.89
+Percentage = Large Number * 0.05 =&gt; 61,728.3945
+Total = Large Number + Percentage =&gt; 1,296,296.2845
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org4c01802" class="outline-2">
+<h2 id="org4c01802"><span class="section-number-2">2.</span> Export Instructions</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+To test the export functionality:
+</p>
+
+<ol class="org-ol">
+<li>Enable numerals-mode in this buffer</li>
+<li>Verify calculations appear as overlays</li>
+<li>Preview export substitutions: <code>M-x numerals-export-preview-substitutions</code></li>
+<li>Export to HTML: <code>C-c C-e h h</code></li>
+<li>Export to LaTeX: <code>C-c C-e l l</code></li>
+<li>Compare exported content with overlay display</li>
+</ol>
+
+<p>
+Expected behavior:
+</p>
+<ul class="org-ul">
+<li>Simple literals (like "Monthly Rent = 2350.00") should NOT show " =&gt; 2350" in export</li>
+<li>Complex expressions should show their calculated results</li>
+<li>Table formulas should be replaced entirely with calculated values</li>
+<li>Cross-table references should show calculated results</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Colin McLear</p>
+<p class="date">Created: 2025-08-03 Sun 21:28</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

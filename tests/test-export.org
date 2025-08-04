@@ -37,13 +37,13 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12
 ** Cross-Table References (SHOULD show overlay in export)
 
 Total Annual Income = Budget.C2
-Total Annual Expenses = Budget.TOTALS[1] - Budget.C2
+Total Annual Expenses = Budget.C6 - Budget.C2
 Net Profit = Total Annual Income - Total Annual Expenses
 
 ** Mixed Expressions with Table References (SHOULD show overlay in export)
 
 ROI Percentage = (Net Profit / (Budget.C2 * 0.2)) * 100
-Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12
+Monthly Cash Flow = Budget.B6 - (Budget.C6 - Budget.C2) / 12
 
 ** Complex Table with Cross-References
 
@@ -51,8 +51,8 @@ Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12
 | Metric                 | Value           | Formula                    |
 |------------------------|-----------------|----------------------------|
 | Gross Rental Yield    | =Budget.C2/300000*100 | Annual rent / property value |
-| Net Rental Yield      | =(Budget.C2-Budget.TOTALS[1]+Budget.C2)/300000*100 | After expenses |
-| Monthly Net Cash Flow | =(Budget.C2-Budget.TOTALS[1]+Budget.C2)/12 | Net income monthly |
+| Net Rental Yield      | =(Budget.C2-Budget.C6+Budget.C2)/300000*100 | After expenses |
+| Monthly Net Cash Flow | =(Budget.C2-Budget.C6+Budget.C2)/12 | Net income monthly |
 
 ** Test Variables with Comma Formatting
 
