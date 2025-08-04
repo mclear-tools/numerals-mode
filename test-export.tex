@@ -1,0 +1,119 @@
+% Created 2025-08-03 Sun 20:13
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{Colin McLear}
+\date{\today}
+\title{Numerals Mode Export Test}
+\hypersetup{
+ pdfauthor={Colin McLear},
+ pdftitle={Numerals Mode Export Test},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 30.1 (Org mode 9.7.11)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Export Test Cases}
+\label{sec:orgf860b90}
+
+This file tests various calculation types and their export behavior:
+\subsection{Simple Literal Assignments (Should NOT show overlay in export)}
+\label{sec:org0a2c030}
+
+Monthly Rent = 2350.00
+Property Tax = 1200
+Insurance = 800.50
+\subsection{Complex Expression Assignments (SHOULD show overlay in export)}
+\label{sec:org996ea80}
+
+Total Fixed Costs = Monthly Rent + Property Tax + Insurance => 4,350.5
+Annual Rent Income = Monthly Rent * 12 => 28,200
+Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 => 4,194
+\subsection{Standalone Calculations (SHOULD show overlay in export)}
+\label{sec:org47cc3c2}
+
+2500 + 1200 + 800
+(Monthly Rent * 0.08) + 150
+\subsection{Table Calculations (Formulas SHOULD be replaced with results)}
+\label{sec:org66bf102}
+
+\begin{table}[htbp]
+\label{tab:orgab45c73}
+\centering
+\begin{tabular}{lrll}
+Category & Monthly & Annual & Notes\\
+\hline
+Rental Income & 2350 & 28,200 & Monthly rent times 12\\
+Property Tax & 100 & 1,200 & Monthly portion\\
+Insurance & 67 & 804 & Monthly portion\\
+Maintenance & 200 & 2,400 & Estimated monthly\\
+TOTALS & 32,604 & 32,604 & Sum of all categories\\
+\end{tabular}
+\end{table}
+\subsection{Cross-Table References (SHOULD show overlay in export)}
+\label{sec:org45b4dec}
+
+Total Annual Income = Budget.C2 => 28,200
+Total Annual Expenses = Budget.TOTALS[1] - Budget.C2 => Undefined variable
+Net Profit = Total Annual Income - Total Annual Expenses => Undefined variable
+\subsection{Mixed Expressions with Table References (SHOULD show overlay in export)}
+\label{sec:orge4f5fe6}
+
+ROI Percentage = (Net Profit / (Budget.C2 * 0.2)) * 100 => Undefined variable
+Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12 => Undefined variable
+\subsection{Complex Table with Cross-References}
+\label{sec:org83f8c83}
+
+\begin{table}[htbp]
+\label{tab:org1533887}
+\centering
+\begin{tabular}{lll}
+Metric & Value & Formula\\
+\hline
+Gross Rental Yield & (6 Syntax error) & Annual rent / property value\\
+Net Rental Yield & (7 Expected `)') & After expenses\\
+Monthly Net Cash Flow & (7 Expected `)') & Net income monthly\\
+\end{tabular}
+\end{table}
+\subsection{Test Variables with Comma Formatting}
+\label{sec:orgdf98604}
+
+Large Number = 1,234,567.89
+Percentage = Large Number * 0.05 => 61,728.3945
+Total = Large Number + Percentage => 1,296,296.2845
+\section{Export Instructions}
+\label{sec:org3de39c2}
+
+To test the export functionality:
+
+\begin{enumerate}
+\item Enable numerals-mode in this buffer
+\item Verify calculations appear as overlays
+\item Preview export substitutions: \texttt{M-x numerals-export-preview-substitutions}
+\item Export to HTML: \texttt{C-c C-e h h}
+\item Export to \LaTeX{}: \texttt{C-c C-e l l}
+\item Compare exported content with overlay display
+\end{enumerate}
+
+Expected behavior:
+\begin{itemize}
+\item Simple literals (like "Monthly Rent = 2350.00") should NOT show " => 2350" in export
+\item Complex expressions should show their calculated results
+\item Table formulas should be replaced entirely with calculated values
+\item Cross-table references should show calculated results
+\end{itemize}
+\end{document}

@@ -1,0 +1,78 @@
+#+TITLE: Numerals Mode Export Test
+#+STARTUP: numerals
+#+PROPERTY: numerals-mode t
+
+* Export Test Cases
+
+This file tests various calculation types and their export behavior:
+
+** Simple Literal Assignments (Should NOT show overlay in export)
+
+Monthly Rent = 2350.00
+Property Tax = 1200
+Insurance = 800.50
+
+** Complex Expression Assignments (SHOULD show overlay in export)
+
+Total Fixed Costs = Monthly Rent + Property Tax + Insurance
+Annual Rent Income = Monthly Rent * 12
+Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12
+
+** Standalone Calculations (SHOULD show overlay in export)
+
+2500 + 1200 + 800
+(Monthly Rent * 0.08) + 150
+
+** Table Calculations (Formulas SHOULD be replaced with results)
+
+#+NAME: Budget
+| Category        | Monthly | Annual  | Notes                    |
+|-----------------|---------|---------|--------------------------|
+| Rental Income   | 2350    | =B2*12  | Monthly rent times 12    |
+| Property Tax    | 100     | =B3*12  | Monthly portion          |
+| Insurance       | 67      | =B4*12  | Monthly portion          |
+| Maintenance     | 200     | =B5*12  | Estimated monthly        |
+| TOTALS          | =SUM(B2:B5) | =SUM(C2:C5) | Sum of all categories |
+
+** Cross-Table References (SHOULD show overlay in export)
+
+Total Annual Income = Budget.C2
+Total Annual Expenses = Budget.TOTALS[1] - Budget.C2
+Net Profit = Total Annual Income - Total Annual Expenses
+
+** Mixed Expressions with Table References (SHOULD show overlay in export)
+
+ROI Percentage = (Net Profit / (Budget.C2 * 0.2)) * 100
+Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12
+
+** Complex Table with Cross-References
+
+#+NAME: Analysis
+| Metric                 | Value           | Formula                    |
+|------------------------|-----------------|----------------------------|
+| Gross Rental Yield    | =Budget.C2/300000*100 | Annual rent / property value |
+| Net Rental Yield      | =(Budget.C2-Budget.TOTALS[1]+Budget.C2)/300000*100 | After expenses |
+| Monthly Net Cash Flow | =(Budget.C2-Budget.TOTALS[1]+Budget.C2)/12 | Net income monthly |
+
+** Test Variables with Comma Formatting
+
+Large Number = 1,234,567.89
+Percentage = Large Number * 0.05
+Total = Large Number + Percentage
+
+* Export Instructions
+
+To test the export functionality:
+
+1. Enable numerals-mode in this buffer
+2. Verify calculations appear as overlays
+3. Preview export substitutions: =M-x numerals-export-preview-substitutions=
+4. Export to HTML: =C-c C-e h h=
+5. Export to LaTeX: =C-c C-e l l=
+6. Compare exported content with overlay display
+
+Expected behavior:
+- Simple literals (like "Monthly Rent = 2350.00") should NOT show " => 2350" in export
+- Complex expressions should show their calculated results
+- Table formulas should be replaced entirely with calculated values
+- Cross-table references should show calculated results

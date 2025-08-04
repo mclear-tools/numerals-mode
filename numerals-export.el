@@ -73,6 +73,12 @@ This function determines the substitution logic:
 (defvar-local numerals-export-overlay-data nil
   "Cache of overlay data for export substitution.")
 
+(defvar numerals-export-variable-cache (make-hash-table :test 'equal)
+  "Global cache of variable data for export substitution, keyed by buffer name.")
+
+(defvar numerals-export-table-cache (make-hash-table :test 'equal)
+  "Global cache of table data for export substitution, keyed by buffer name.")
+
 (defun numerals-export-cache-overlay-data ()
   "Cache overlay data for export substitution.
 This must be called from the original buffer before export begins."
@@ -100,7 +106,15 @@ This must be called from the original buffer before export begins."
       (setq overlay-data (nreverse overlay-data))
       ;; Store in both local and global cache
       (setq numerals-export-overlay-data overlay-data)
-      (puthash buffer-key overlay-data numerals-export-overlay-cache))))
+      (puthash buffer-key overlay-data numerals-export-overlay-cache)
+      
+      ;; Cache variables and tables for cross-references
+      (when (boundp 'numerals-variables-storage)
+        (puthash buffer-key (copy-hash-table numerals-variables-storage) 
+                 numerals-export-variable-cache))
+      (when (boundp 'numerals-tables-storage)
+        (puthash buffer-key (copy-hash-table numerals-tables-storage)
+                 numerals-export-table-cache)))))
 
 (defun numerals-export-substitute-overlays (backend)
   "Replace numerals overlays with calculated values for export.
@@ -113,7 +127,10 @@ This function operates on a temporary copy of the buffer during export."
                                      (match-string 1 current-buffer-name)
                                    current-buffer-name))
            (cached-overlays (or numerals-export-overlay-data
-                                (gethash original-buffer-name numerals-export-overlay-cache))))
+                                (gethash original-buffer-name numerals-export-overlay-cache)))
+           (cached-variables (gethash original-buffer-name numerals-export-variable-cache))
+           (cached-tables (gethash original-buffer-name numerals-export-table-cache)))
+      ;; First, try to substitute using cached overlay data
       (when cached-overlays
         (save-excursion
           (save-restriction
@@ -123,7 +140,62 @@ This function operates on a temporary copy of the buffer during export."
                                          (lambda (a b) 
                                            (> (plist-get a :start) (plist-get b :start))))))
               (dolist (overlay-data sorted-overlays)
-                (numerals-export-substitute-from-data overlay-data)))))))))
+                (numerals-export-substitute-from-data overlay-data))))))
+      ;; Second pass: recalculate expressions that might have been missed
+      (when (or cached-variables cached-tables)
+        (numerals-export-recalculate-expressions cached-variables cached-tables)))))
+
+(defun numerals-export-recalculate-expressions (variables tables)
+  "Recalculate expressions in export buffer using cached VARIABLES and TABLES.
+This handles cases where overlay matching failed, especially for standalone calculations."
+  (require 'numerals-calc)
+  (require 'numerals-table-refs)
+  (require 'numerals-tables)
+  (require 'numerals-variables)
+  
+  ;; Temporarily set up buffer-local table storage for table reference resolution
+  (when tables
+    (setq-local numerals-tables-storage tables))
+  (when variables
+    (setq-local numerals-variables-storage variables))
+    
+  (save-excursion
+    (goto-char (point-min))
+    (while (not (eobp))
+      (let* ((line (buffer-substring-no-properties
+                    (line-beginning-position)
+                    (line-end-position)))
+             (parse-result (numerals-parser-parse-line line)))
+        (when parse-result
+          (let ((type (plist-get parse-result :type))
+                (expression (plist-get parse-result :expression)))
+            (cond
+             ;; Handle standalone calculations
+             ((and (eq type 'calculation) expression)
+              ;; Check if this line already has a result appended
+              (unless (string-match " => " line)
+                (let* ((calc-result (numerals-calc-evaluate expression variables))
+                       (result (plist-get calc-result :value))
+                       (error-msg (plist-get calc-result :error)))
+                  (when result
+                    (end-of-line)
+                    (insert (format " => %s" (numerals-calc-format-result result)))))))
+             
+             ;; Handle complex variable assignments that might have failed
+             ((and (eq type 'assignment) expression)
+              (let* ((var-name (plist-get parse-result :variable))
+                     (dependencies (numerals-parser-extract-variables expression))
+                     (is-literal (and (numerals-utils-is-numeric-string-p (string-trim expression))
+                                      (null dependencies))))
+                ;; Only process non-literal assignments that don't already have results
+                (unless (or is-literal (string-match " => " line))
+                  (let* ((calc-result (numerals-calc-evaluate expression variables))
+                         (result (plist-get calc-result :value))
+                         (error-msg (plist-get calc-result :error)))
+                    (when result
+                      (end-of-line)
+                      (insert (format " => %s" (numerals-calc-format-result result)))))))))))
+        (forward-line 1)))))
 
 (defun numerals-export-substitute-from-data (overlay-data)
   "Substitute overlay content using cached OVERLAY-DATA.
