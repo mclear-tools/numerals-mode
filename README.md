@@ -126,6 +126,30 @@ This ensures that calculations always occur in the correct order, preventing "un
 - Position tracking to prevent duplicate processing
 - Selective reprocessing of only changed elements
 
+### Export Integration
+
+Numerals-mode automatically integrates with org-mode's export system to substitute calculated results in exported documents:
+
+#### Export Behavior
+
+- **Simple literal assignments** (e.g., `Monthly Rent = 2350.00`) - exported as-is without overlay duplication
+- **Complex expressions** (e.g., `Total = Rent + Taxes`) - exported with calculated results: `Total = Rent + Taxes => 4,350.5`
+- **Table formulas** (e.g., `=SUM(B2:B5)`) - replaced entirely with calculated values: `32,604`
+- **Cross-table references** (e.g., `Budget.TOTALS[0]`) - exported with resolved values
+
+#### Supported Export Backends
+
+- HTML (`C-c C-e h h`)
+- LaTeX/PDF (`C-c C-e l l`, `C-c C-e l p`)
+- All other org-mode export backends
+
+#### Export Commands
+
+- `M-x numerals-export-toggle-substitution` - Toggle overlay substitution during export
+- `M-x numerals-export-preview-substitutions` - Preview which overlays will be substituted
+
+Export integration is automatically enabled when numerals-mode is active.
+
 ## License
 
 GPL-3.0-or-later
