@@ -18,6 +18,7 @@
 
 (require 'numerals-utils)
 (require 'numerals-parser)
+(require 'numerals-table-refs)
 
 ;;; Export Integration
 
@@ -145,6 +146,116 @@ This function operates on a temporary copy of the buffer during export."
       (when (or cached-variables cached-tables)
         (numerals-export-recalculate-expressions cached-variables cached-tables)))))
 
+(defun numerals-export-table-refs-substitute (expression variables tables)
+  "Substitute table references in EXPRESSION using cached TABLES data.
+This is the export-specific version that doesn't rely on overlays."
+  (let ((result expression))
+    ;; Handle TableName.TOTALS[N] format
+    (setq result (replace-regexp-in-string
+                  "\\b\\([A-Za-z_][A-Za-z0-9_]*\\)\\.TOTALS\\[\\([0-9]+\\)\\]"
+                  (lambda (match)
+                    (when (string-match "\\b\\([A-Za-z_][A-Za-z0-9_]*\\)\\.TOTALS\\[\\([0-9]+\\)\\]" match)
+                      (let* ((table-name (match-string 1 match))
+                             (col-num (string-to-number (match-string 2 match)))
+                             (table-data (gethash table-name tables)))
+                        ;; Debug: log what we found
+                        (when (and table-data (string= table-name "Budget"))
+                          (message "Export debug - Budget table data keys: %s" (mapcar 'car table-data))
+                          (message "Export debug - Budget data rows: %d" (length (plist-get table-data :data)))
+                          (message "Export debug - Budget calculated-values: %s" (plist-get table-data :calculated-values)))
+                        (if table-data
+                            (let* ((data (plist-get table-data :data))
+                                   (totals-row (car (last data)))
+                                   (calculated-values (plist-get table-data :calculated-values)))
+                              ;; Try to get value from calculated-values first
+                              (if calculated-values
+                                  (let* ((row-index (1- (length data)))  ; TOTALS is last row
+                                         (row-values (nth row-index calculated-values)))
+                                    (if (and row-values (< col-num (length row-values)))
+                                        (or (nth col-num row-values) 
+                                            ;; Fallback to raw data
+                                            (if (and totals-row (< col-num (length totals-row)))
+                                                (nth col-num totals-row)
+                                              match))
+                                      match))
+                                ;; Fallback to raw data if no calculated values
+                                (if (and totals-row (< col-num (length totals-row)))
+                                    (let ((cell-value (nth col-num totals-row)))
+                                      (or cell-value match))
+                                  match)))
+                          match))))
+                  result))
+    
+    ;; Handle TableName.CellRef format
+    (setq result (replace-regexp-in-string
+                  "\\b\\([A-Za-z_][A-Za-z0-9_]*\\)\\.\\([A-Z]+[0-9]+\\)\\b"
+                  (lambda (match)
+                    (when (string-match "\\b\\([A-Za-z_][A-Za-z0-9_]*\\)\\.\\([A-Z]+[0-9]+\\)\\b" match)
+                      (let* ((table-name (match-string 1 match))
+                             (cell-ref (match-string 2 match))
+                             (table-data (gethash table-name tables)))
+                        (if table-data
+                            (let* ((col-letter (string-match "[A-Z]+" cell-ref))
+                                   (col-num (if col-letter
+                                                (- (string-to-char (substring cell-ref 0 1)) ?A)
+                                              0))
+                                   (row-num (string-to-number (replace-regexp-in-string "[A-Z]+" "" cell-ref)))
+                                   (data (plist-get table-data :data))
+                                   (calculated-values (plist-get table-data :calculated-values)))
+                              (if (and (>= row-num 1) 
+                                       (<= row-num (1+ (length data)))
+                                       (>= col-num 0))
+                                  (let* ((actual-row (- row-num 2))  ; Adjust for header row
+                                         ;; Try calculated values first
+                                         (calc-value (when (and calculated-values
+                                                                (>= actual-row 0)
+                                                                (< actual-row (length calculated-values)))
+                                                       (let ((row-vals (nth actual-row calculated-values)))
+                                                         (when (and row-vals (< col-num (length row-vals)))
+                                                           (nth col-num row-vals)))))
+                                         ;; Fallback to raw data
+                                         (row-data (when (and (not calc-value) (>= actual-row 0))
+                                                     (nth actual-row data))))
+                                    (or calc-value
+                                        (when (and row-data (< col-num (length row-data)))
+                                          (nth col-num row-data))
+                                        match))
+                                match))
+                          match))))
+                  result))
+    
+    ;; Handle TableName[row,col] format
+    (setq result (replace-regexp-in-string
+                  "\\b\\([A-Za-z_][A-Za-z0-9_]*\\)\\[\\([0-9]+\\),\\([0-9]+\\)\\]"
+                  (lambda (match)
+                    (when (string-match "\\b\\([A-Za-z_][A-Za-z0-9_]*\\)\\[\\([0-9]+\\),\\([0-9]+\\)\\]" match)
+                      (let* ((table-name (match-string 1 match))
+                             (row-num (string-to-number (match-string 2 match)))
+                             (col-num (string-to-number (match-string 3 match)))
+                             (table-data (gethash table-name tables)))
+                        (if table-data
+                            (let* ((data (plist-get table-data :data))
+                                   (calculated-values (plist-get table-data :calculated-values))
+                                   (actual-row (- row-num 2)))  ; Adjust for header row
+                              (if (and (>= actual-row 0)
+                                       (< actual-row (length data))
+                                       (>= col-num 0))
+                                  (let* ((calc-value (when (and calculated-values
+                                                                (< actual-row (length calculated-values)))
+                                                       (let ((row-vals (nth actual-row calculated-values)))
+                                                         (when (and row-vals (< col-num (length row-vals)))
+                                                           (nth col-num row-vals)))))
+                                         (row-data (when (not calc-value)
+                                                     (nth actual-row data))))
+                                    (or calc-value
+                                        (when (and row-data (< col-num (length row-data)))
+                                          (nth col-num row-data))
+                                        match))
+                                match))
+                          match))))
+                  result))
+    result))
+
 (defun numerals-export-recalculate-expressions (variables tables)
   "Recalculate expressions in export buffer using cached VARIABLES and TABLES.
 This handles cases where overlay matching failed, especially for standalone calculations."
@@ -158,44 +269,48 @@ This handles cases where overlay matching failed, especially for standalone calc
     (setq-local numerals-tables-storage tables))
   (when variables
     (setq-local numerals-variables-storage variables))
+  
+  ;; Override the table-refs-substitute function for export context
+  (cl-letf (((symbol-function 'numerals-table-refs-substitute)
+             (lambda (expr vars) (numerals-export-table-refs-substitute expr vars tables))))
     
-  (save-excursion
-    (goto-char (point-min))
-    (while (not (eobp))
-      (let* ((line (buffer-substring-no-properties
-                    (line-beginning-position)
-                    (line-end-position)))
-             (parse-result (numerals-parser-parse-line line)))
-        (when parse-result
-          (let ((type (plist-get parse-result :type))
-                (expression (plist-get parse-result :expression)))
-            (cond
-             ;; Handle standalone calculations
-             ((and (eq type 'calculation) expression)
-              ;; Check if this line already has a result appended
-              (unless (string-match " => " line)
-                (let* ((calc-result (numerals-calc-evaluate expression variables))
-                       (result (plist-get calc-result :value))
-                       (error-msg (plist-get calc-result :error)))
-                  (when result
-                    (end-of-line)
-                    (insert (format " => %s" (numerals-calc-format-result result)))))))
-             
-             ;; Handle complex variable assignments that might have failed
-             ((and (eq type 'assignment) expression)
-              (let* ((var-name (plist-get parse-result :variable))
-                     (dependencies (numerals-parser-extract-variables expression))
-                     (is-literal (and (numerals-utils-is-numeric-string-p (string-trim expression))
-                                      (null dependencies))))
-                ;; Only process non-literal assignments that don't already have results
-                (unless (or is-literal (string-match " => " line))
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let* ((line (buffer-substring-no-properties
+                      (line-beginning-position)
+                      (line-end-position)))
+               (parse-result (numerals-parser-parse-line line)))
+          (when parse-result
+            (let ((type (plist-get parse-result :type))
+                  (expression (plist-get parse-result :expression)))
+              (cond
+               ;; Handle standalone calculations
+               ((and (eq type 'calculation) expression)
+                ;; Check if this line already has a result appended
+                (unless (string-match " => " line)
                   (let* ((calc-result (numerals-calc-evaluate expression variables))
                          (result (plist-get calc-result :value))
                          (error-msg (plist-get calc-result :error)))
                     (when result
                       (end-of-line)
-                      (insert (format " => %s" (numerals-calc-format-result result)))))))))))
-        (forward-line 1)))))
+                      (insert (format " => %s" (numerals-calc-format-result result)))))))
+               
+               ;; Handle complex variable assignments that might have failed
+               ((and (eq type 'assignment) expression)
+                (let* ((var-name (plist-get parse-result :variable))
+                       (dependencies (numerals-parser-extract-variables expression))
+                       (is-literal (and (numerals-utils-is-numeric-string-p (string-trim expression))
+                                        (null dependencies))))
+                  ;; Only process non-literal assignments that don't already have results
+                  (unless (or is-literal (string-match " => " line))
+                    (let* ((calc-result (numerals-calc-evaluate expression variables))
+                           (result (plist-get calc-result :value))
+                           (error-msg (plist-get calc-result :error)))
+                      (when result
+                        (end-of-line)
+                        (insert (format " => %s" (numerals-calc-format-result result)))))))))))
+          (forward-line 1))))))
 
 (defun numerals-export-substitute-from-data (overlay-data)
   "Substitute overlay content using cached OVERLAY-DATA.
