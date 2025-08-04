@@ -19,6 +19,7 @@
 (require 'numerals-utils)
 (require 'numerals-parser)
 (require 'numerals-table-refs)
+(require 'numerals-tables)
 
 ;;; Export Integration
 
@@ -80,6 +81,57 @@ This function determines the substitution logic:
 (defvar numerals-export-table-cache (make-hash-table :test 'equal)
   "Global cache of table data for export substitution, keyed by buffer name.")
 
+(defun numerals-export-extract-table-calculated-values ()
+  "Extract calculated values from table overlays and add them to table data.
+Returns an enhanced tables hash with :calculated-values added to each table."
+  (let ((enhanced-tables (make-hash-table :test 'equal)))
+    ;; First, find all named tables in the buffer
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^#\\+NAME:[ \t]+\\([^ \t\n]+\\)" nil t)
+        (let ((table-name (match-string 1)))
+          (forward-line 1)
+          (when (numerals-table-at-point-p)
+            (when-let ((table (numerals-table-parse)))
+              (let* ((bounds (plist-get table :bounds))
+                     (start (car bounds))
+                     (end (cdr bounds))
+                     (data (plist-get table :data))
+                     (headers (plist-get table :headers))
+                     (calculated-values '()))
+                
+                ;; For each data row, extract calculated values from overlays
+                (save-excursion
+                  (goto-char start)
+                  (when headers (forward-line 2)) ; Skip header and separator
+                  (dolist (row data)
+                    (when (looking-at "^[ \t]*|")
+                      (let ((row-values '())
+                            (line-start (line-beginning-position))
+                            (line-end (line-end-position)))
+                        ;; Get all overlays in this line, sorted by position
+                        (let ((overlays-in-line '()))
+                          (dolist (overlay (overlays-in line-start line-end))
+                            (when (and (overlay-get overlay 'numerals-overlay)
+                                       (overlay-get overlay 'display))
+                              (push (cons (overlay-start overlay) 
+                                          (overlay-get overlay 'display))
+                                    overlays-in-line)))
+                          ;; Sort by position and extract values
+                          (setq overlays-in-line 
+                                (sort overlays-in-line (lambda (a b) (< (car a) (car b)))))
+                          (dolist (overlay-data overlays-in-line)
+                            (push (cdr overlay-data) row-values)))
+                        (push (nreverse row-values) calculated-values)
+                        (forward-line 1))))
+                  )
+                
+                ;; Store enhanced table data
+                (let ((enhanced-table (copy-sequence table)))
+                  (plist-put enhanced-table :calculated-values (nreverse calculated-values))
+                  (puthash table-name enhanced-table enhanced-tables))))))))
+    enhanced-tables))
+
 (defun numerals-export-cache-overlay-data ()
   "Cache overlay data for export substitution.
 This must be called from the original buffer before export begins."
@@ -113,9 +165,10 @@ This must be called from the original buffer before export begins."
       (when (boundp 'numerals-variables-storage)
         (puthash buffer-key (copy-hash-table numerals-variables-storage) 
                  numerals-export-variable-cache))
-      (when (boundp 'numerals-tables-storage)
-        (puthash buffer-key (copy-hash-table numerals-tables-storage)
-                 numerals-export-table-cache)))))
+      
+      ;; Extract and cache tables with calculated values
+      (let ((enhanced-tables (numerals-export-extract-table-calculated-values)))
+        (puthash buffer-key enhanced-tables numerals-export-table-cache)))))
 
 (defun numerals-export-substitute-overlays (backend)
   "Replace numerals overlays with calculated values for export.
@@ -158,11 +211,6 @@ This is the export-specific version that doesn't rely on overlays."
                       (let* ((table-name (match-string 1 match))
                              (col-num (string-to-number (match-string 2 match)))
                              (table-data (gethash table-name tables)))
-                        ;; Debug: log what we found
-                        (when (and table-data (string= table-name "Budget"))
-                          (message "Export debug - Budget table data keys: %s" (mapcar 'car table-data))
-                          (message "Export debug - Budget data rows: %d" (length (plist-get table-data :data)))
-                          (message "Export debug - Budget calculated-values: %s" (plist-get table-data :calculated-values)))
                         (if table-data
                             (let* ((data (plist-get table-data :data))
                                    (totals-row (car (last data)))

@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-08-03 Sun 21:14 -->
+<!-- 2025-08-03 Sun 21:17 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Numerals Mode Export Test</title>
@@ -197,15 +197,15 @@
 <body>
 <div id="content" class="content">
 <h1 class="title">Numerals Mode Export Test</h1>
-<div id="outline-container-orgd74d40a" class="outline-2">
-<h2 id="orgd74d40a"><span class="section-number-2">1.</span> Export Test Cases</h2>
+<div id="outline-container-org6b123aa" class="outline-2">
+<h2 id="org6b123aa"><span class="section-number-2">1.</span> Export Test Cases</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 This file tests various calculation types and their export behavior:
 </p>
 </div>
-<div id="outline-container-org1f8cbfe" class="outline-3">
-<h3 id="org1f8cbfe"><span class="section-number-3">1.1.</span> Simple Literal Assignments (Should NOT show overlay in export)</h3>
+<div id="outline-container-org9cbfd93" class="outline-3">
+<h3 id="org9cbfd93"><span class="section-number-3">1.1.</span> Simple Literal Assignments (Should NOT show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 Monthly Rent = 2350.00
@@ -214,8 +214,8 @@ Insurance = 800.50
 </p>
 </div>
 </div>
-<div id="outline-container-orgad7d175" class="outline-3">
-<h3 id="orgad7d175"><span class="section-number-3">1.2.</span> Complex Expression Assignments (SHOULD show overlay in export)</h3>
+<div id="outline-container-org6799beb" class="outline-3">
+<h3 id="org6799beb"><span class="section-number-3">1.2.</span> Complex Expression Assignments (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 Total Fixed Costs = Monthly Rent + Property Tax + Insurance =&gt; 4,350.5
@@ -224,8 +224,8 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4
 </p>
 </div>
 </div>
-<div id="outline-container-orgd1ce5a2" class="outline-3">
-<h3 id="orgd1ce5a2"><span class="section-number-3">1.3.</span> Standalone Calculations (SHOULD show overlay in export)</h3>
+<div id="outline-container-orgd3b80f3" class="outline-3">
+<h3 id="orgd3b80f3"><span class="section-number-3">1.3.</span> Standalone Calculations (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
 2500 + 1200 + 800
@@ -233,10 +233,10 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4
 </p>
 </div>
 </div>
-<div id="outline-container-orgf4ae2fe" class="outline-3">
-<h3 id="orgf4ae2fe"><span class="section-number-3">1.4.</span> Table Calculations (Formulas SHOULD be replaced with results)</h3>
+<div id="outline-container-org140ca26" class="outline-3">
+<h3 id="org140ca26"><span class="section-number-3">1.4.</span> Table Calculations (Formulas SHOULD be replaced with results)</h3>
 <div class="outline-text-3" id="text-1-4">
-<table id="orgae2400c" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org64e360d" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
@@ -295,8 +295,8 @@ Net Annual Income = Annual Rent Income - (Property Tax + Insurance) * 12 =&gt; 4
 </table>
 </div>
 </div>
-<div id="outline-container-org421f814" class="outline-3">
-<h3 id="org421f814"><span class="section-number-3">1.5.</span> Cross-Table References (SHOULD show overlay in export)</h3>
+<div id="outline-container-org278110f" class="outline-3">
+<h3 id="org278110f"><span class="section-number-3">1.5.</span> Cross-Table References (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-5">
 <p>
 Total Annual Income = Budget.C2 =&gt; 28,200
@@ -305,8 +305,8 @@ Net Profit = Total Annual Income - Total Annual Expenses =&gt; Undefined variabl
 </p>
 </div>
 </div>
-<div id="outline-container-org3dad941" class="outline-3">
-<h3 id="org3dad941"><span class="section-number-3">1.6.</span> Mixed Expressions with Table References (SHOULD show overlay in export)</h3>
+<div id="outline-container-orgcccb64a" class="outline-3">
+<h3 id="orgcccb64a"><span class="section-number-3">1.6.</span> Mixed Expressions with Table References (SHOULD show overlay in export)</h3>
 <div class="outline-text-3" id="text-1-6">
 <p>
 ROI Percentage = (Net Profit / (Budget.C2 * 0.2)) * 100 =&gt; Undefined variable
@@ -314,10 +314,10 @@ Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12 =&gt;
 </p>
 </div>
 </div>
-<div id="outline-container-org25249a7" class="outline-3">
-<h3 id="org25249a7"><span class="section-number-3">1.7.</span> Complex Table with Cross-References</h3>
+<div id="outline-container-org05d569b" class="outline-3">
+<h3 id="org05d569b"><span class="section-number-3">1.7.</span> Complex Table with Cross-References</h3>
 <div class="outline-text-3" id="text-1-7">
-<table id="orgfe3e863" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org48275b8" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
@@ -356,8 +356,8 @@ Monthly Cash Flow = Budget.TOTALS[0] - (Budget.TOTALS[1] - Budget.C2) / 12 =&gt;
 </table>
 </div>
 </div>
-<div id="outline-container-org4c5ad64" class="outline-3">
-<h3 id="org4c5ad64"><span class="section-number-3">1.8.</span> Test Variables with Comma Formatting</h3>
+<div id="outline-container-org1c67899" class="outline-3">
+<h3 id="org1c67899"><span class="section-number-3">1.8.</span> Test Variables with Comma Formatting</h3>
 <div class="outline-text-3" id="text-1-8">
 <p>
 Large Number = 1,234,567.89
@@ -367,8 +367,8 @@ Total = Large Number + Percentage =&gt; 1,296,296.2845
 </div>
 </div>
 </div>
-<div id="outline-container-org1a8bd0f" class="outline-2">
-<h2 id="org1a8bd0f"><span class="section-number-2">2.</span> Export Instructions</h2>
+<div id="outline-container-org2186e00" class="outline-2">
+<h2 id="org2186e00"><span class="section-number-2">2.</span> Export Instructions</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 To test the export functionality:
@@ -397,7 +397,7 @@ Expected behavior:
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Colin McLear</p>
-<p class="date">Created: 2025-08-03 Sun 21:14</p>
+<p class="date">Created: 2025-08-03 Sun 21:17</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
