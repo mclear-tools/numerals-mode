@@ -34,6 +34,7 @@
 (require 'numerals-display)
 (require 'numerals-tables)
 (require 'numerals-export)
+(require 'numerals-pandoc)
 
 (defgroup numerals nil
   "Literate calculation mode."
@@ -521,6 +522,7 @@ Returns a cons (START . END) of the formula position, or nil if not found."
       (load (expand-file-name "numerals-display.el" base-dir))
       (load (expand-file-name "numerals-tables.el" base-dir))
       (load (expand-file-name "numerals-export.el" base-dir))
+      (load (expand-file-name "numerals-pandoc.el" base-dir))
       (load (expand-file-name "numerals-mode.el" base-dir)))
     ;; Re-enable in all previously enabled buffers
     (dolist (buffer enabled-buffers)

@@ -150,6 +150,68 @@ Numerals-mode automatically integrates with org-mode's export system to substitu
 
 Export integration is automatically enabled when numerals-mode is active.
 
+### Pandoc Export
+
+Numerals-mode provides special support for exporting documents via pandoc, preserving all calculated values:
+
+#### Basic Usage
+
+```elisp
+;; Export current buffer to HTML
+M-x numerals-pandoc-export-to-html
+
+;; Export to PDF (requires LaTeX)
+M-x numerals-pandoc-export-to-pdf
+
+;; Export to Word document
+M-x numerals-pandoc-export-to-docx
+
+;; Export with custom format
+M-x numerals-pandoc-export
+```
+
+#### Configuration
+
+```elisp
+;; Set default output format
+(setq numerals-pandoc-output-format "html")
+
+;; Add custom pandoc arguments
+(setq numerals-pandoc-extra-args '("--toc" "--standalone" "--number-sections"))
+
+;; Keep temporary preprocessed files for debugging
+(setq numerals-pandoc-delete-temp-file nil)
+```
+
+#### How It Works
+
+1. Creates a temporary copy of your buffer
+2. Substitutes all numerals overlays with their calculated values
+3. Runs pandoc on the preprocessed file
+4. Outputs the final document with all calculations intact
+
+#### Advanced Features
+
+- **Preview preprocessed content**: `M-x numerals-pandoc-preview-preprocessed`
+- **Export region only**: `M-x numerals-pandoc-export-region`
+- **Shell wrapper script**: `M-x numerals-pandoc-create-shell-wrapper`
+
+The shell wrapper allows command-line usage:
+```bash
+./numerals-pandoc.sh input.org output.html --toc --standalone
+```
+
+#### Supported Formats
+
+All pandoc output formats are supported, including:
+- HTML (with or without standalone wrapper)
+- PDF (via LaTeX)
+- Microsoft Word (.docx)
+- Markdown variants
+- LaTeX
+- EPUB
+- And many more
+
 ## License
 
 GPL-3.0-or-later

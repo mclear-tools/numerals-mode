@@ -1,0 +1,57 @@
+#+TITLE: Pandoc Export Test
+#+STARTUP: numerals
+
+* Overview
+This document tests the pandoc export functionality of numerals-mode.
+
+* Simple Calculations
+
+Base Amount = 1,234.56
+Tax Rate = 0.0875
+Tax Amount = Base Amount * Tax Rate
+Total = Base Amount + Tax Amount
+
+* Table with Formulas
+
+#+NAME: expenses
+| Category    | Jan    | Feb    | Mar    | Total      |
+|-------------+--------+--------+--------+------------|
+| Rent        | 2000   | 2000   | 2000   | =SUM(B2:D2) |
+| Utilities   | 250    | 280    | 265    | =SUM(B3:D3) |
+| Food        | 600    | 650    | 625    | =SUM(B4:D4) |
+| Transport   | 150    | 175    | 160    | =SUM(B5:D5) |
+| TOTALS      | =SUM(B2:B5) | =SUM(C2:C5) | =SUM(D2:D5) | =SUM(E2:E5) |
+
+* Cross-Table References
+
+Monthly Average = expenses.TOTALS[3] / 3
+Annual Projection = expenses.TOTALS[3] * 4
+
+* Complex Expressions
+
+Compound Interest Rate = 0.05
+Principal = 10000
+Years = 5
+Final Amount = Principal * (1 + Compound Interest Rate) ^ Years
+
+* Test Instructions
+
+To test pandoc export:
+
+1. Enable numerals-mode if not already active
+2. Save the file to trigger calculations
+3. Try different export commands:
+   - M-x numerals-pandoc-export-to-html
+   - M-x numerals-pandoc-export-to-pdf
+   - M-x numerals-pandoc-export-to-docx
+   
+4. Verify that exported documents show:
+   - Calculated values for all expressions
+   - Table formulas replaced with results
+   - Cross-table references resolved
+   - All formatting preserved
+
+5. Preview the preprocessed file:
+   - M-x numerals-pandoc-preview-preprocessed
+   
+This should show what pandoc will receive as input.

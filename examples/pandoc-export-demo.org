@@ -1,0 +1,27 @@
+#+TITLE: Pandoc Export Demo
+#+STARTUP: numerals
+
+* Quick Start
+
+To export this file with pandoc and preserve all calculated values:
+
+1. Enable numerals-mode (already enabled via #+STARTUP)
+2. Save the file (C-x C-s) to trigger calculations
+3. Export with one of these commands:
+   - M-x numerals-pandoc-export-to-html
+   - M-x numerals-pandoc-export-to-pdf
+   - M-x numerals-pandoc-export
+
+* Example Calculations
+
+Base Price = 199.99
+Sales Tax = 0.08
+Tax Amount = Base Price * Sales Tax
+Total Price = Base Price + Tax Amount
+
+* Preview What Pandoc Will See
+
+Run: M-x numerals-pandoc-preview-preprocessed
+
+This shows the exact content that will be sent to pandoc,
+with all overlays substituted as actual text.
