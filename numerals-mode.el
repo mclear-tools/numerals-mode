@@ -270,8 +270,9 @@ CRITICAL: Maintains exact character count for perfect pipe alignment."
             (when (string-match "^\\s-*=\\s-*\\(.+\\)" cell)
               (let* ((formula (match-string 1 cell))
                      (variables (numerals-parser-extract-variables formula))
-                     (has-cell-refs (string-match-p "\\b[A-Z]+[0-9]+\\b" formula)))
-                (when (or variables has-cell-refs)
+                     (has-cell-refs (string-match-p "\\b[A-Z]+[0-9]+\\b" formula))
+                     (has-table-refs (string-match-p "\\b[A-Za-z_][A-Za-z0-9_]*\\.[A-Z]+[0-9]+\\b\\|\\b[A-Za-z_][A-Za-z0-9_]*\\.TOTALS\\[" formula)))
+                (when (or variables has-cell-refs has-table-refs)
                   (setq needs-reprocessing t))))))
         ;; Only reprocess if needed and hasn't been reprocessed yet
         (when (and needs-reprocessing

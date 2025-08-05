@@ -19,6 +19,7 @@
 (require 'cl-lib)
 (require 'numerals-utils)
 (require 'numerals-calc)
+(require 'numerals-table-refs)
 
 ;;; Table Detection
 
@@ -413,13 +414,16 @@ Returns the calculated result as a string."
   "Expand all table references in FORMULA using TABLE data.
 Replaces cell references with their values and function calls with results."
   (let ((result formula))
-    ;; Step 1: Expand SUM function calls
+    ;; Step 1: Expand cross-table references FIRST (before anything else)
+    (setq result (numerals-table-refs-substitute result nil))
+    
+    ;; Step 2: Expand SUM function calls
     (setq result (numerals-table--expand-sum-functions result table))
     
-    ;; Step 2: Expand cell references
+    ;; Step 3: Expand cell references
     (setq result (numerals-table--expand-cell-references result table))
     
-    ;; Step 3: Expand variable references
+    ;; Step 4: Expand variable references
     (setq result (numerals-table--expand-variable-references result))
     
     result))

@@ -82,20 +82,32 @@ Supported functions: `SUM`, `AVERAGE`, `COUNT`, `MAX`, `MIN`
 
 ### Cross-Table References
 
-Reference cells from named tables using multiple formats:
+Reference cells from named tables using `TableName.CellRef` syntax:
 
 ```org
-#+NAME: Budget
-| Employee | Salary   | FICA    |
-|----------|----------|---------|  
-| Alice    | 100,000  | =B2*0.0765 |
-| Bob      | 80,000   | =B3*0.0765 |
-| TOTALS   | =SUM(B2:B3) | =SUM(C2:C3) |
+#+NAME: Sales
+| Product | 2023    | 2024    |
+|---------|---------|---------|
+| Gas     | 1,572,921 | 1,561,805 |
+| Lottery | 826,356   | 743,353   |
 
-Total FICA Cost = Budget.TOTALS[1]     # Reference TOTALS row, column 1
-Alice's Salary = Budget.B2             # Direct cell reference
-Total Payroll = Budget[4,1]            # Row 4, column 1 format
+#+NAME: Summary  
+| Category    | Formula                    | Result    |
+|-------------|----------------------------|-----------|
+| Total 2023  | =Sales.B2+Sales.B3         | 2,399,277 |
+| Total 2024  | =Sales.C2+Sales.C3         | 2,305,158 |
+| Difference  | =B3-B2                     | -94,119   |
+
+# Variables can also reference table cells
+Gas_Growth = (Sales.C2 / Sales.B2 - 1) * 100  # => -0.70%
 ```
+
+**Supported reference formats:**
+- `TableName.B2` - Direct cell reference (most common)
+- `TableName.TOTALS[0]` - Reference calculated values in TOTALS rows
+- Works in both table formulas and variable assignments
+- Handles comma-formatted numbers correctly
+- Supports compound operations: `=Table1.B2+Table2.C3*Table3.D4`
 
 
 ## Examples

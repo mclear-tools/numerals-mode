@@ -35,7 +35,8 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                                (col-num (string-to-number (match-string 2 match)))
                                (value (numerals-simple-get-totals-value table-name col-num)))
                           (if (and value (stringp value) (numerals-utils-is-numeric-string-p value))
-                              value
+                              ;; Strip commas from the value before returning
+                              (numerals-utils-strip-commas value)
                             match)))
                       (error
                        (message "Debug TOTALS substitution ERROR: %s in %s" (error-message-string err) match)
@@ -53,7 +54,8 @@ Handles TableName.CellRef format (e.g., Budget.E24, Budget.TOTALS[0])."
                                (cell-ref (match-string 2 match))
                                (value (numerals-simple-get-cell-value table-name cell-ref)))
                           (if (and value (stringp value) (numerals-utils-is-numeric-string-p value))
-                              value
+                              ;; Strip commas from the value before returning
+                              (numerals-utils-strip-commas value)
                             match)))))
                   result))
     result))
